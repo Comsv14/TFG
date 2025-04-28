@@ -6,10 +6,6 @@ return [
     |--------------------------------------------------------------------------
     | Cross-Origin Resource Sharing (CORS) Configuration
     |--------------------------------------------------------------------------
-    |
-    | Aquí configuramos los orígenes permitidos, métodos, cabeceras y
-    | habilitamos el envío de cookies (credenciales) para Sanctum.
-    |
     */
 
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
@@ -26,6 +22,6 @@ return [
 
     'max_age' => 0,
 
-    // <-- Muy importante para que el front envíe la cookie de sesión
+    // Muy importante para enviar/recibir cookies de sesión
     'supports_credentials' => true,
 ];
