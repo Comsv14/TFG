@@ -31,25 +31,22 @@ export default function PetForm({ onSaved, petToEdit, onCancel }) {
 
   const handleSubmit = async e => {
     e.preventDefault();
-    if (!form.name) return alert('El nombre es obligatorio');
-
+    if (!form.name.trim()) return alert('El nombre es obligatorio');
     setLoading(true);
     try {
-      // 1) Asegura la cookie CSRF
-      await api.get('/sanctum/csrf-cookie');
-
-      // 2) Decide POST o PUT
       let res;
       if (petToEdit?.id) {
+        // Editar
         res = await api.put(`/api/pets/${petToEdit.id}`, form);
       } else {
+        // Crear
         res = await api.post('/api/pets', form);
       }
       onSaved(res.data);
       setForm({ name: '', breed: '', age: '', photo: '' });
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || 'Error guardando mascota');
+      alert(err.response?.data?.message || 'Error guardando la mascota');
     } finally {
       setLoading(false);
     }
@@ -99,13 +96,25 @@ export default function PetForm({ onSaved, petToEdit, onCancel }) {
               onChange={handleChange}
             />
           </div>
-          <button type="submit" className="btn btn-primary me-2" disabled={loading}>
+          <button
+            type="submit"
+            className="btn btn-primary me-2"
+            disabled={loading}
+          >
             {loading
-              ? petToEdit ? 'Guardando...' : 'Añadiendo...'
-              : petToEdit ? 'Guardar cambios' : 'Añadir mascota'}
+              ? petToEdit
+                ? 'Guardando...'
+                : 'Añadiendo...'
+              : petToEdit
+              ? 'Guardar cambios'
+              : 'Añadir mascota'}
           </button>
           {petToEdit && (
-            <button type="button" className="btn btn-secondary" onClick={onCancel}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={onCancel}
+            >
               Cancelar
             </button>
           )}

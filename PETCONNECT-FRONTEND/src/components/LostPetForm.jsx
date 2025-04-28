@@ -1,13 +1,23 @@
+// PETCONNECT-FRONTEND/src/components/LostPetForm.jsx
 import React, { useState } from 'react';
 
 export default function LostPetForm({ onReport }) {
-  const [form, setForm] = useState({ name: '', desc: '', photo: '' });
+  const [form, setForm] = useState({
+    pet_name: '',
+    description: '',
+    photo: '',
+    last_seen_location: ''
+  });
+
+  const handleChange = e => {
+    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
 
   const handleSubmit = e => {
     e.preventDefault();
-    if (!form.name) return alert('Pon nombre');
-    onReport({ ...form, id: Date.now(), sightings: [] });
-    setForm({ name: '', desc: '', photo: '' });
+    if (!form.pet_name.trim()) return alert('El nombre de la mascota es obligatorio');
+    onReport(form);
+    setForm({ pet_name:'', description:'', photo:'', last_seen_location:'' });
   };
 
   return (
@@ -17,29 +27,41 @@ export default function LostPetForm({ onReport }) {
         <form onSubmit={handleSubmit}>
           <div className="mb-2">
             <input
-              className="form-control form-control-sm"
+              name="pet_name"
+              className="form-control"
               placeholder="Nombre de la mascota"
-              value={form.name}
-              onChange={e => setForm({ ...form, name: e.target.value })}
+              value={form.pet_name}
+              onChange={handleChange}
             />
           </div>
           <div className="mb-2">
             <input
-              className="form-control form-control-sm"
+              name="description"
+              className="form-control"
               placeholder="Descripción"
-              value={form.desc}
-              onChange={e => setForm({ ...form, desc: e.target.value })}
+              value={form.description}
+              onChange={handleChange}
             />
           </div>
           <div className="mb-2">
             <input
-              className="form-control form-control-sm"
+              name="photo"
+              className="form-control"
               placeholder="URL foto"
               value={form.photo}
-              onChange={e => setForm({ ...form, photo: e.target.value })}
+              onChange={handleChange}
             />
           </div>
-          <button type="submit" className="btn btn-danger btn-sm">
+          <div className="mb-2">
+            <input
+              name="last_seen_location"
+              className="form-control"
+              placeholder="Última ubicación vista"
+              value={form.last_seen_location}
+              onChange={handleChange}
+            />
+          </div>
+          <button type="submit" className="btn btn-danger">
             Publicar
           </button>
         </form>

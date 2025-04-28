@@ -1,36 +1,44 @@
+// PETCONNECT-FRONTEND/src/components/LostPetCard.jsx
 import React, { useState } from 'react';
 
 export default function LostPetCard({ pet, onReportSighting }) {
   const [sighting, setSighting] = useState('');
 
-  const submit = () => {
+  const submitSighting = () => {
     if (!sighting.trim()) return;
-    onReportSighting(pet.id, sighting);
+    onReportSighting(pet.id, { comment: sighting });
     setSighting('');
   };
 
   return (
     <div className="card h-100 shadow-sm">
-      <img src={pet.photo} className="card-img-top" alt={pet.name} />
+      {pet.photo && (
+        <img src={pet.photo} className="card-img-top" alt={pet.pet_name} />
+      )}
       <div className="card-body d-flex flex-column">
-        <h5 className="card-title">{pet.name}</h5>
-        <p className="card-text">{pet.desc}</p>
+        <h5 className="card-title">{pet.pet_name}</h5>
+        {pet.description && <p className="card-text">{pet.description}</p>}
+        {pet.last_seen_location && (
+          <p className="card-text"><small>Última ubicación: {pet.last_seen_location}</small></p>
+        )}
+
         <div className="mt-auto">
           <h6>Avistamientos:</h6>
-          {pet.sightings.map((s, i) => (
-            <div key={i} className="border rounded p-2 mb-2">
-              {s}
+          {pet.sightings.map(s => (
+            <div key={s.id} className="border rounded p-2 mb-2">
+              <strong>{s.user.name || s.user.email}:</strong> {s.comment}
             </div>
           ))}
+
           <div className="input-group input-group-sm">
             <input
               type="text"
               className="form-control"
-              placeholder="Dónde lo viste..."
+              placeholder="¿Dónde lo viste?"
               value={sighting}
               onChange={e => setSighting(e.target.value)}
             />
-            <button className="btn btn-sm btn-warning" onClick={submit}>
+            <button className="btn btn-warning" onClick={submitSighting}>
               Avisar
             </button>
           </div>

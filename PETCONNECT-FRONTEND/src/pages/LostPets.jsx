@@ -1,45 +1,74 @@
-import React, { useState } from 'react';
+// PETCONNECT-FRONTEND/src/pages/LostPets.jsx
+import React, { useState, useEffect } from 'react';
+import api from '../api/axios';
 import LostPetForm from '../components/LostPetForm';
 import LostPetCard from '../components/LostPetCard';
 
-const initialLost = [
-  {
-    id: 1,
-    name: 'Oreo',
-    desc: 'Negro y blanco, visto por última vez en calle A',
-    photo: 'https://via.placeholder.com/150',
-    sightings: ['Lo vi cerca del bar El Parque']
-  }
-];
-
 export default function LostPets() {
-  const [lostList, setLostList] = useState(initialLost);
+  const [lostList, setLostList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const handleReport = pet => {
-    setLostList([pet, ...lostList]);
+  // 1) Al montar, cargamos mascotas perdidas
+  useEffect(() => {
+    const fetchLost = async () => {
+      try {
+        const res = await api.get('/api/lost-pets');
+        // cada pet ya trae -> sightings: [ { user: {name,...}, comment,... } ]
+        setLostList(res.data);
+      } catch (err) {
+        console.error(err);
+        setError('No se pudieron cargar las mascotas perdidas.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLost();
+  }, []);
+
+  // 2) Reportar nueva mascota perdida
+  const handleReport = async data => {
+    try {
+      const res = await api.post('/api/lost-pets', data);
+      setLostList([res.data, ...lostList]);
+    } catch (err) {
+      console.error(err);
+      alert('Error al reportar la mascota perdida.');
+    }
   };
 
-  const handleSighting = (id, text) => {
-    setLostList(list =>
-      list.map(p =>
-        p.id === id
-          ? { ...p, sightings: [text, ...p.sightings] }
-          : p
-      )
-    );
+  // 3) Reportar avistamiento
+  const handleSighting = async (id, sightingData) => {
+    try {
+      const res = await api.post(`/api/lost-pets/${id}/sightings`, sightingData);
+      setLostList(cur =>
+        cur.map(p =>
+          p.id === id
+            ? { ...p, sightings: [...p.sightings, res.data] }
+            : p
+        )
+      );
+    } catch (err) {
+      console.error(err);
+      alert('Error al reportar avistamiento.');
+    }
   };
+
+  if (loading) return <p>Cargando mascotas perdidas...</p>;
 
   return (
     <div>
       <h2 className="mb-4">Mascotas Perdidas</h2>
-      {/* Formulario de nuevo reporte */}
+      {error && <div className="alert alert-danger">{error}</div>}
+
+      {/* Formulario de reporte */}
       <LostPetForm onReport={handleReport} />
 
-      {/* Listado de mascotas perdidas */}
+      {/* Listado */}
       <div className="row">
-        {lostList.map(p => (
-          <div className="col-md-4 mb-3" key={p.id}>
-            <LostPetCard pet={p} onReportSighting={handleSighting} />
+        {lostList.map(pet => (
+          <div className="col-md-4 mb-3" key={pet.id}>
+            <LostPetCard pet={pet} onReportSighting={handleSighting} />
           </div>
         ))}
       </div>
