@@ -1,4 +1,4 @@
-// src/pages/Register.jsx
+// PETCONNECT-FRONTEND/src/pages/Register.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
@@ -21,15 +21,22 @@ export default function Register() {
     e.preventDefault();
     setError('');
     try {
-      // 1) Obtiene la cookie CSRF
+      // 1) Asegurarnos de tener la cookie CSRF
       await api.get('/sanctum/csrf-cookie');
 
-      // 2) Llama al endpoint de registro
+      // 2) Llamada al endpoint de registro
       await api.post('/api/register', form);
 
-      // 3) Redirige al login
+      // 3) Si va bien, vamos al login
       navigate('/login');
     } catch (err) {
+      // Mostramos todo el error en consola
+      console.error('🛑 Register failed:', err);
+      if (err.response) {
+        console.error('Response status:', err.response.status);
+        console.error('Response data:', err.response.data);
+      }
+      // Y sacamos mensaje al usuario
       setError(
         err.response?.data?.errors
           ? Object.values(err.response.data.errors).flat().join(' ')

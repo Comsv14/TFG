@@ -1,4 +1,4 @@
-// PETCONNECT-FRONTEND/src/components/PetCard.jsx
+// src/components/PetCard.jsx
 import React from 'react';
 
 export default function PetCard({ pet, onEdit, onDelete }) {
@@ -16,7 +16,7 @@ export default function PetCard({ pet, onEdit, onDelete }) {
             Editar
           </button>
           <button className="btn btn-sm btn-outline-danger" onClick={onDelete}>
-            Eliminar
+            Borrar
           </button>
         </div>
       </div>
