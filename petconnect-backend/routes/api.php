@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\PetController;
 use App\Http\Controllers\Api\ActivityController;
 use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\LostPetController;
+use App\Http\Controllers\Api\ProfileController;
 
 // Rutas públicas
 Route::post('register', [AuthController::class, 'register']);
@@ -17,6 +18,9 @@ Route::get('sanctum/csrf-cookie', [AuthController::class, 'csrfCookie'])->name('
 // Rutas protegidas
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('logout', [AuthController::class, 'logout']);
+
+    Route::get('profile', [ProfileController::class, 'show']);
+    Route::post('profile', [ProfileController::class, 'update']);
 
     Route::apiResource('pets', PetController::class);
 

@@ -14,17 +14,31 @@ import LostPets from './pages/LostPets';
 import Activities from './pages/Activities';
 import Register from './pages/Register';
 import Login from './pages/Login';
+import Profile from './pages/Profile';
 
 export default function App() {
   const [toasts, setToasts] = useState([]);
   const [token, setToken] = useState(localStorage.getItem('token'));
+  const [user, setUser] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Al cambiar token, guardamos en localStorage y cargamos usuario
   useEffect(() => {
-    token
-      ? localStorage.setItem('token', token)
-      : localStorage.removeItem('token');
+    if (token) {
+      localStorage.setItem('token', token);
+      (async () => {
+        try {
+          const { data } = await api.get('/api/profile');
+          setUser(data);
+        } catch (e) {
+          console.error(e);
+        }
+      })();
+    } else {
+      localStorage.removeItem('token');
+      setUser(null);
+    }
   }, [token]);
 
   const addToast = useCallback((message, type = 'info') => {
@@ -45,26 +59,20 @@ export default function App() {
   const handleLogout = async () => {
     try {
       await api.post('/api/logout');
-    } catch {
-      /* ignoramos errores */
-    } finally {
-      setToken(null);
-      addToast('Has cerrado sesión', 'info');
-      navigate('/login', { replace: true });
-    }
+    } catch {}
+    setToken(null);
+    addToast('Has cerrado sesión', 'info');
+    navigate('/login', { replace: true });
   };
 
-  const RequireAuth = ({ children }) => {
-    return token ? children : <Navigate to="/login" replace state={{ from: location }}/> ;
-  };
-
-  const RequireGuest = ({ children }) => {
-    return token ? <Navigate to="/pets" replace /> : children;
-  };
+  const RequireAuth = ({ children }) =>
+    token ? children : <Navigate to="/login" replace state={{ from: location }} />;
+  const RequireGuest = ({ children }) =>
+    token ? <Navigate to="/pets" replace /> : children;
 
   return (
     <>
-      {token && (
+      {token && user && (
         <nav className="navbar navbar-expand-lg navbar-light bg-light">
           <div className="container">
             <NavLink className="navbar-brand" to="/pets">
@@ -79,7 +87,7 @@ export default function App() {
               <span className="navbar-toggler-icon" />
             </button>
             <div className="collapse navbar-collapse" id="navbarNav">
-              <ul className="navbar-nav ms-auto">
+              <ul className="navbar-nav ms-auto align-items-center">
                 <li className="nav-item">
                   <NavLink
                     to="/pets"
@@ -110,13 +118,45 @@ export default function App() {
                     Perdidas
                   </NavLink>
                 </li>
-                <li className="nav-item">
-                  <button
-                    className="nav-link btn btn-link"
-                    onClick={handleLogout}
+                <li className="nav-item dropdown">
+                  <NavLink
+                    to="#"
+                    className="nav-link dropdown-toggle p-0"
+                    id="profileDropdown"
+                    data-bs-toggle="dropdown"
                   >
-                    Logout
-                  </button>
+                    <img
+                      src={user.avatar_url || '/default-avatar.png'}
+                      alt="avatar"
+                      className="rounded-circle"
+                      style={{
+                        width: '40px',
+                        height: '40px',
+                        objectFit: 'cover',
+                      }}
+                    />
+                  </NavLink>
+                  <ul
+                    className="dropdown-menu dropdown-menu-end"
+                    aria-labelledby="profileDropdown"
+                  >
+                    <li>
+                      <NavLink className="dropdown-item" to="/profile">
+                        Mi Perfil
+                      </NavLink>
+                    </li>
+                    <li>
+                      <hr className="dropdown-divider" />
+                    </li>
+                    <li>
+                      <button
+                        className="dropdown-item"
+                        onClick={handleLogout}
+                      >
+                        Logout
+                      </button>
+                    </li>
+                  </ul>
                 </li>
               </ul>
             </div>
@@ -130,7 +170,7 @@ export default function App() {
           position: 'fixed',
           top: '1rem',
           right: '1rem',
-          zIndex: 1080
+          zIndex: 1080,
         }}
       >
         {toasts.map((t) => (
@@ -152,11 +192,18 @@ export default function App() {
             path="/login"
             element={
               <RequireGuest>
-                <Login addToast={addToast} onLogin={(tok) => setToken(tok)} />
+                <Login addToast={addToast} onLogin={setToken} />
               </RequireGuest>
             }
           />
-
+          <Route
+            path="/profile"
+            element={
+              <RequireAuth>
+                <Profile addToast={addToast} />
+              </RequireAuth>
+            }
+          />
           <Route
             path="/pets"
             element={
@@ -181,11 +228,14 @@ export default function App() {
               </RequireAuth>
             }
           />
-
           <Route
             path="/"
             element={
-              token ? <Navigate to="/pets" replace /> : <Navigate to="/login" replace />
+              token ? (
+                <Navigate to="/pets" replace />
+              ) : (
+                <Navigate to="/login" replace />
+              )
             }
           />
           <Route path="*" element={<Navigate to="/" replace />} />

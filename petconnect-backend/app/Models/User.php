@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
@@ -14,6 +14,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'avatar',    // <-- aquí
     ];
 
     protected $hidden = [
@@ -21,26 +22,11 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-    // Relaciones
-    public function pets()
+    // Para devolver siempre la URL completa
+    public function getAvatarUrlAttribute()
     {
-        return $this->hasMany(Pet::class);
-    }
-
-    public function activities()
-    {
-        return $this->belongsToMany(Activity::class)
-                    ->withPivot('registered_at')
-                    ->withTimestamps();
-    }
-
-    public function comments()
-    {
-        return $this->hasMany(Comment::class);
-    }
-
-    public function lostPets()
-    {
-        return $this->hasMany(LostPet::class);
+        return $this->avatar
+            ? url(\Illuminate\Support\Facades\Storage::url($this->avatar))
+            : null;
     }
 }
