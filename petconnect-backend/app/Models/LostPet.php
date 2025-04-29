@@ -12,13 +12,9 @@ class LostPet extends Model
     public $timestamps = false; // usamos solo posted_at
 
     protected $fillable = [
-        'user_id',
-        'pet_name',
-        'description',
-        'photo',
-        'last_seen_location',
-        'found',
+        'pet_name','description','last_seen_location','photo','user_id'
     ];
+    
 
     protected $dates = [
         'posted_at',

@@ -1,4 +1,3 @@
-// PETCONNECT-FRONTEND/src/pages/LostPets.jsx
 import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
 import LostPetForm from '../components/LostPetForm';
@@ -9,47 +8,38 @@ export default function LostPets() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // 1) Al montar, cargamos mascotas perdidas
   useEffect(() => {
-    const fetchLost = async () => {
+    (async () => {
       try {
-        const res = await api.get('/api/lost-pets');
-        // cada pet ya trae -> sightings: [ { user: {name,...}, comment,... } ]
-        setLostList(res.data);
-      } catch (err) {
-        console.error(err);
+        const { data } = await api.get('/api/lost-pets');
+        setLostList(
+          data.map(pet => ({
+            ...pet,
+            sightings: Array.isArray(pet.sightings) ? pet.sightings : []
+          }))
+        );
+      } catch {
         setError('No se pudieron cargar las mascotas perdidas.');
       } finally {
         setLoading(false);
       }
-    };
-    fetchLost();
+    })();
   }, []);
 
-  // 2) Reportar nueva mascota perdida
-  const handleReport = async data => {
-    try {
-      const res = await api.post('/api/lost-pets', data);
-      setLostList([res.data, ...lostList]);
-    } catch (err) {
-      console.error(err);
-      alert('Error al reportar la mascota perdida.');
-    }
+  // Aquí ya no hacemos POST, simplemente añadimos el pet que nos viene
+  const handleReport = pet => {
+    setLostList(prev => [{ ...pet, sightings: [] }, ...prev]);
   };
 
-  // 3) Reportar avistamiento
   const handleSighting = async (id, sightingData) => {
     try {
-      const res = await api.post(`/api/lost-pets/${id}/sightings`, sightingData);
-      setLostList(cur =>
-        cur.map(p =>
-          p.id === id
-            ? { ...p, sightings: [...p.sightings, res.data] }
-            : p
+      const { data } = await api.post(`/api/lost-pets/${id}/sightings`, sightingData);
+      setLostList(prev =>
+        prev.map(p =>
+          p.id === id ? { ...p, sightings: [...p.sightings, data] } : p
         )
       );
-    } catch (err) {
-      console.error(err);
+    } catch {
       alert('Error al reportar avistamiento.');
     }
   };
@@ -61,10 +51,9 @@ export default function LostPets() {
       <h2 className="mb-4">Mascotas Perdidas</h2>
       {error && <div className="alert alert-danger">{error}</div>}
 
-      {/* Formulario de reporte */}
+      {/* Ahora LostPetForm es quien hace el POST y nos devuelve el pet */}
       <LostPetForm onReport={handleReport} />
 
-      {/* Listado */}
       <div className="row">
         {lostList.map(pet => (
           <div className="col-md-4 mb-3" key={pet.id}>

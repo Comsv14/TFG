@@ -20,8 +20,8 @@ class Activity extends Model
     public function users()
     {
         return $this->belongsToMany(User::class)
-                    ->withPivot('registered_at')
-                    ->withTimestamps();
+                    ->withPivot('registered_at');
+                    // ->withTimestamps();  // eliminado
     }
 
     public function comments()

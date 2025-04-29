@@ -9,77 +9,79 @@ export default function Activities() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // 1) Carga inicial de actividades y comentarios
-  useEffect(() => {
-    const fetchAll = async () => {
-      try {
-        const { data: acts } = await api.get('/api/activities');
-        // Inicializamos newComment y comments
-        const init = acts.map(a => ({ ...a, newComment: '', comments: [] }));
-        setActivities(init);
+  // Función para cargar actividades + comentarios
+  const loadActivities = async () => {
+    try {
+      // 1) Traemos todas las actividades
+      const { data: acts } = await api.get('/api/activities');
+      // 2) Inicializamos comentarios y joined
+      const initialized = acts.map(a => ({
+        ...a,
+        joined: a.users?.some(u => u.id === a.id) ?? false,
+        comments: [],
+        newComment: ''
+      }));
+      setActivities(initialized);
 
-        // Cargar comentarios de cada actividad
-        await Promise.all(
-          init.map(async a => {
-            const { data: c } = await api.get('/api/comments', {
-              params: { activity_id: a.id }
-            });
-            setActivities(curr =>
-              curr.map(x => (x.id === a.id ? { ...x, comments: c } : x))
-            );
-          })
-        );
-      } catch (err) {
-        console.error(err);
-        setError('No se pudieron cargar las actividades.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAll();
-  }, []);
-
-  // 2) Añadir nueva actividad propuesta
-  const handleCreate = activity => {
-    setActivities(curr => [ { ...activity, joined: false, newComment:'', comments: [] }, ...curr ]);
+      // 3) Para cada actividad, traemos sus comentarios
+      await Promise.all(
+        initialized.map(async a => {
+          const { data: c } = await api.get('/api/comments', {
+            params: { activity_id: a.id }
+          });
+          setActivities(curr =>
+            curr.map(x =>
+              x.id === a.id ? { ...x, comments: c } : x
+            )
+          );
+        })
+      );
+    } catch (err) {
+      console.error(err);
+      setError('No se pudieron cargar las actividades.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // 3) Apuntarse
+  // Al montar, cargamos
+  useEffect(() => {
+    loadActivities();
+  }, []);
+
+  // Cuando creamos, recargamos
+  const handleCreate = () => {
+    setLoading(true);
+    loadActivities();
+  };
+
+  // Apuntarse...
   const handleJoin = async id => {
     try {
       await api.post(`/api/activities/${id}/register`);
-      setActivities(curr =>
-        curr.map(a => (a.id === id ? { ...a, joined: true } : a))
-      );
+      loadActivities();
     } catch (err) {
       console.error(err);
       alert('Error al apuntarse.');
     }
   };
 
-  // 4) Cambio de texto en comentario
+  // Gestión comentarios...
   const handleCommentChange = (id, text) => {
     setActivities(curr =>
       curr.map(a => (a.id === id ? { ...a, newComment: text } : a))
     );
   };
 
-  // 5) Enviar comentario
   const handleCommentSubmit = async id => {
     const act = activities.find(a => a.id === id);
     if (!act.newComment.trim()) return;
     try {
-      const { data: comment } = await api.post('/api/comments', {
+      await api.post('/api/comments', {
         activity_id: id,
         body: act.newComment
       });
-      setActivities(curr =>
-        curr.map(a =>
-          a.id === id
-            ? { ...a, comments: [...a.comments, comment], newComment: '' }
-            : a
-        )
-      );
+      loadActivities();
     } catch (err) {
       console.error(err);
       alert('Error al enviar comentario.');
@@ -93,10 +95,10 @@ export default function Activities() {
       <h2 className="mb-4">Actividades Colectivas</h2>
       {error && <div className="alert alert-danger">{error}</div>}
 
-      {/* Formulario de propuesta */}
+      {/* Proponer */}
       <ActivityForm onCreated={handleCreate} />
 
-      {/* Listado de actividades */}
+      {/* Listado */}
       <div className="row">
         {activities.map(act => (
           <div className="col-md-6 mb-3" key={act.id}>

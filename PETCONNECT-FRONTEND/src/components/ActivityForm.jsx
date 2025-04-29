@@ -22,8 +22,11 @@ export default function ActivityForm({ onCreated }) {
     if (!form.title.trim()) return alert('El título es obligatorio');
     setLoading(true);
     try {
-      const res = await api.post('/api/activities', form);
-      onCreated(res.data);
+      // 1) Creamos la actividad en el servidor
+      await api.post('/api/activities', form);
+      // 2) Notificamos al padre para recargar la lista
+      onCreated();
+      // 3) Limpiamos el formulario
       setForm({ title:'', description:'', location:'', starts_at:'', ends_at:'' });
     } catch (err) {
       console.error(err);

@@ -1,23 +1,51 @@
 // PETCONNECT-FRONTEND/src/components/LostPetForm.jsx
 import React, { useState } from 'react';
+import api from '../api/axios';
 
 export default function LostPetForm({ onReport }) {
   const [form, setForm] = useState({
     pet_name: '',
     description: '',
-    photo: '',
-    last_seen_location: ''
+    last_seen_location: '',
+    photo: null,
   });
+  const [loading, setLoading] = useState(false);
 
   const handleChange = e => {
-    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value, files } = e.target;
+    setForm(f => ({
+      ...f,
+      [name]: name === 'photo' ? files[0] : value,
+    }));
   };
 
-  const handleSubmit = e => {
+  const handleSubmit = async e => {
     e.preventDefault();
-    if (!form.pet_name.trim()) return alert('El nombre de la mascota es obligatorio');
-    onReport(form);
-    setForm({ pet_name:'', description:'', photo:'', last_seen_location:'' });
+    setLoading(true);
+    try {
+      const fd = new FormData();
+      fd.append('pet_name', form.pet_name);
+      fd.append('description', form.description);
+      fd.append('last_seen_location', form.last_seen_location);
+      if (form.photo) fd.append('photo', form.photo);
+
+      const { data } = await api.post('/api/lost-pets', fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      onReport(data);
+      setForm({ pet_name: '', description: '', last_seen_location: '', photo: null });
+    } catch (err) {
+      console.error(err);
+      if (err.response?.data?.errors) {
+        const msgs = Object.values(err.response.data.errors).flat().join('\n');
+        alert('Errores de validación:\n' + msgs);
+      } else {
+        alert('Error al reportar la mascota perdida.');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -25,44 +53,37 @@ export default function LostPetForm({ onReport }) {
       <div className="card-body">
         <h5 className="card-title">Reportar mascota perdida</h5>
         <form onSubmit={handleSubmit}>
-          <div className="mb-2">
-            <input
-              name="pet_name"
-              className="form-control"
-              placeholder="Nombre de la mascota"
-              value={form.pet_name}
-              onChange={handleChange}
-            />
-          </div>
-          <div className="mb-2">
-            <input
-              name="description"
-              className="form-control"
-              placeholder="Descripción"
-              value={form.description}
-              onChange={handleChange}
-            />
-          </div>
-          <div className="mb-2">
-            <input
-              name="photo"
-              className="form-control"
-              placeholder="URL foto"
-              value={form.photo}
-              onChange={handleChange}
-            />
-          </div>
-          <div className="mb-2">
-            <input
-              name="last_seen_location"
-              className="form-control"
-              placeholder="Última ubicación vista"
-              value={form.last_seen_location}
-              onChange={handleChange}
-            />
-          </div>
-          <button type="submit" className="btn btn-danger">
-            Publicar
+          <input
+            name="pet_name"
+            className="form-control mb-2"
+            placeholder="Nombre de la mascota"
+            value={form.pet_name}
+            onChange={handleChange}
+            required
+          />
+          <input
+            name="description"
+            className="form-control mb-2"
+            placeholder="Descripción"
+            value={form.description}
+            onChange={handleChange}
+          />
+          <input
+            name="last_seen_location"
+            className="form-control mb-2"
+            placeholder="Última ubicación"
+            value={form.last_seen_location}
+            onChange={handleChange}
+          />
+          <input
+            name="photo"
+            type="file"
+            accept="image/*"
+            className="form-control mb-3"
+            onChange={handleChange}
+          />
+          <button type="submit" className="btn btn-danger" disabled={loading}>
+            {loading ? 'Publicando...' : 'Publicar'}
           </button>
         </form>
       </div>
