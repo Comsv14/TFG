@@ -16,6 +16,8 @@ class Activity extends Model
         'starts_at',
         'ends_at',
         'user_id',
+        'latitude',     // ← añadido
+        'longitude',    // ← añadido
     ];
 
     public function user()

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import api from '../api/axios';
+import MapPicker from './MapPicker';
 
 export default function ActivityForm({ addToast, onCreated }) {
   const [form, setForm] = useState({
@@ -7,7 +8,9 @@ export default function ActivityForm({ addToast, onCreated }) {
     location: '',
     description: '',
     starts_at: '',
-    ends_at: ''
+    ends_at: '',
+    latitude: null,
+    longitude: null,
   });
   const [loading, setLoading] = useState(false);
 
@@ -16,25 +19,38 @@ export default function ActivityForm({ addToast, onCreated }) {
     setForm(f => ({ ...f, [name]: value }));
   };
 
+  const handleMapChange = (lat, lng) => {
+    setForm(f => ({ ...f, latitude: lat, longitude: lng }));
+  };
+
   const handleSubmit = async e => {
     e.preventDefault();
     setLoading(true);
     try {
-      await api.post('/api/activities', form);
+      const fd = new FormData();
+      [
+        'title','location','description',
+        'starts_at','ends_at',
+        'latitude','longitude'
+      ].forEach(key => {
+        if (form[key] != null) fd.append(key, form[key]);
+      });
+
+      await api.post('/api/activities', fd, {
+        headers: {'Content-Type':'multipart/form-data'}
+      });
       onCreated();
       setForm({
         title: '',
         location: '',
         description: '',
         starts_at: '',
-        ends_at: ''
+        ends_at: '',
+        latitude: null,
+        longitude: null,
       });
     } catch (err) {
-      console.error(err);
-      addToast(
-        err.response?.data?.message || 'Error creando actividad',
-        'error'
-      );
+      addToast('Error creando actividad','error');
     } finally {
       setLoading(false);
     }
@@ -56,7 +72,7 @@ export default function ActivityForm({ addToast, onCreated }) {
           <input
             name="location"
             className="form-control mb-2"
-            placeholder="Lugar (opcional)"
+            placeholder="Lugar (texto)"
             value={form.location}
             onChange={handleChange}
           />
@@ -67,8 +83,16 @@ export default function ActivityForm({ addToast, onCreated }) {
             value={form.description}
             onChange={handleChange}
           />
-          <div className="row">
-            <div className="col mb-2">
+
+          <label className="form-label">Selecciona ubicación en el mapa</label>
+          <MapPicker
+            latitude={form.latitude}
+            longitude={form.longitude}
+            onChange={handleMapChange}
+          />
+
+          <div className="row g-2 mt-3">
+            <div className="col">
               <label className="form-label small">Inicio</label>
               <input
                 type="datetime-local"
@@ -79,7 +103,7 @@ export default function ActivityForm({ addToast, onCreated }) {
                 required
               />
             </div>
-            <div className="col mb-2">
+            <div className="col">
               <label className="form-label small">Fin</label>
               <input
                 type="datetime-local"
@@ -90,9 +114,10 @@ export default function ActivityForm({ addToast, onCreated }) {
               />
             </div>
           </div>
+
           <button
             type="submit"
-            className="btn btn-success"
+            className="btn btn-success mt-3"
             disabled={loading}
           >
             {loading ? 'Proponiendo...' : 'Proponer Actividad'}

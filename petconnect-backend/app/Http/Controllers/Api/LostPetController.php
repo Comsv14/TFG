@@ -11,13 +11,13 @@ use Illuminate\Support\Facades\Storage;
 class LostPetController extends Controller
 {
     /**
-     * Lista todas las mascotas perdidas, con usuario y avistamientos,
-     * y convierte la ruta de foto en URL absoluta.
+     * GET /api/lost-pets
      */
-    public function index()
+    public function index(Request $request)
     {
-        $pets = LostPet::with('user', 'sightings.user')
-            ->orderBy('posted_at', 'desc')
+        $pets = LostPet::with(['user','sightings.user'])
+            // Ordenamos por created_at (no existe posted_at)
+            ->orderBy('created_at','desc')
             ->get()
             ->map(function (LostPet $pet) {
                 $pet->photo = $pet->photo
@@ -30,20 +30,22 @@ class LostPetController extends Controller
     }
 
     /**
-     * Reporta una nueva mascota perdida, sube foto si la hay
-     * y devuelve la entidad con URL absoluta de la imagen.
+     * POST /api/lost-pets
      */
     public function store(Request $request)
     {
         $data = $request->validate([
-            'pet_name'           => 'required|string|max:150',
-            'description'        => 'nullable|string',
-            'last_seen_location' => 'nullable|string',
-            'photo'              => 'nullable|image|max:2048',
+            'pet_name'             => 'required|string|max:150',
+            'description'          => 'nullable|string',
+            'last_seen_location'   => 'nullable|string',
+            'last_seen_latitude'   => 'nullable|numeric|between:-90,90',
+            'last_seen_longitude'  => 'nullable|numeric|between:-180,180',
+            'photo'                => 'nullable|image|max:2048',
         ]);
 
         if ($request->hasFile('photo')) {
-            $path = $request->file('photo')->store('lost-pets', 'public');
+            $path = $request->file('photo')
+                            ->store('lost-pets','public');
             $data['photo'] = $path;
         }
 
@@ -53,74 +55,83 @@ class LostPetController extends Controller
             ? url(Storage::url($lost->photo))
             : null;
 
-        return response()->json($lost, 201);
+        return response()->json($lost,201);
     }
 
     /**
-     * Actualiza el flag `found` de un reporte de mascota perdida.
+     * PUT /api/lost-pets/{lost_pet}
      */
-    public function update(Request $request, LostPet $lostPet)
-    {
-        $this->authorize('update', $lostPet);
-
-        $data = $request->validate([
-            'found' => 'required|boolean',
-        ]);
-
-        $lostPet->update($data);
-
-        // Si quieres devolver la foto con URL absoluta en la respuesta:
-        $lostPet->photo = $lostPet->photo
-            ? url(Storage::url($lostPet->photo))
-            : null;
-
-        return response()->json($lostPet);
-    }
-
-    /**
-     * Elimina un reporte de mascota perdida y borra su foto del disco.
-     */
-    public function destroy(LostPet $lostPet)
-    {
-        $this->authorize('delete', $lostPet);
-
-        if ($lostPet->photo) {
-            // Extraemos el path interno para borrarlo
-            $internal = ltrim(parse_url($lostPet->photo, PHP_URL_PATH), '/storage/');
-            Storage::disk('public')->delete($internal);
-        }
-
-        $lostPet->delete();
-
-        return response()->noContent();
-    }
-
-    /**
-     * Reporta un avistamiento para la mascota perdida,
-     * opcionalmente con foto, y devuelve el avistamiento creado.
-     */
-    public function reportSighting(Request $request, LostPet $lostPet)
+    public function update(Request $request, LostPet $lost_pet)
     {
         $data = $request->validate([
-            'location' => 'nullable|string',
-            'comment'  => 'nullable|string',
-            'photo'    => 'nullable|image|max:2048',
+            'pet_name'             => 'sometimes|required|string|max:150',
+            'description'          => 'nullable|string',
+            'last_seen_location'   => 'nullable|string',
+            'last_seen_latitude'   => 'nullable|numeric|between:-90,90',
+            'last_seen_longitude'  => 'nullable|numeric|between:-180,180',
+            'photo'                => 'nullable|image|max:2048',
         ]);
 
         if ($request->hasFile('photo')) {
-            $path = $request->file('photo')->store('lost-pets/sightings', 'public');
+            if ($lost_pet->photo) {
+                Storage::disk('public')->delete($lost_pet->photo);
+            }
+            $path = $request->file('photo')
+                            ->store('lost-pets','public');
             $data['photo'] = $path;
         }
 
-        $sighting = $lostPet->sightings()->create(array_merge($data, [
-            'user_id' => $request->user()->id,
-        ]));
+        $lost_pet->update($data);
 
-        $sighting->load('user');
-        if (isset($data['photo'])) {
-            $sighting->photo = url(Storage::url($data['photo']));
+        $lost_pet->photo = $lost_pet->photo
+            ? url(Storage::url($lost_pet->photo))
+            : null;
+
+        return response()->json($lost_pet);
+    }
+
+    /**
+     * DELETE /api/lost-pets/{lost_pet}
+     */
+    public function destroy(LostPet $lost_pet)
+    {
+        if ($lost_pet->photo) {
+            Storage::disk('public')->delete($lost_pet->photo);
+        }
+        $lost_pet->delete();
+        return response()->json(null,204);
+    }
+
+    /**
+     * POST /api/lost-pets/{lost_pet}/sightings
+     */
+    public function reportSighting(Request $request, LostPet $lost_pet)
+    {
+        $data = $request->validate([
+            'location'   => 'nullable|string',
+            'latitude'   => 'nullable|numeric|between:-90,90',
+            'longitude'  => 'nullable|numeric|between:-180,180',
+            'comment'    => 'nullable|string',
+            'photo'      => 'nullable|image|max:2048',
+        ]);
+
+        if ($request->hasFile('photo')) {
+            $path = $request->file('photo')
+                            ->store('lost-pets/sightings','public');
+            $data['photo'] = $path;
         }
 
-        return response()->json($sighting, 201);
+        $sighting = $lost_pet
+            ->sightings()
+            ->create(array_merge($data,[
+                'user_id'=>$request->user()->id,
+            ]));
+
+        $sighting->load('user');
+        $sighting->photo = isset($data['photo'])
+            ? url(Storage::url($data['photo']))
+            : null;
+
+        return response()->json($sighting,201);
     }
 }
