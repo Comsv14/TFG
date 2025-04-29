@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 
 export default function Toast({ id, message, bg, onClose }) {
-  // Cierra automáticamente tras 3s
+  // Auto‐close a los 3s
   useEffect(() => {
     const timer = setTimeout(() => onClose(id), 3000);
     return () => clearTimeout(timer);
@@ -12,7 +12,7 @@ export default function Toast({ id, message, bg, onClose }) {
     <div
       className="toast show align-items-center text-white border-0 mb-2"
       role="alert"
-      style={{ backgroundColor: bg }}
+      style={{ backgroundColor: bg, minWidth: '200px' }}
     >
       <div className="d-flex">
         <div className="toast-body">{message}</div>
