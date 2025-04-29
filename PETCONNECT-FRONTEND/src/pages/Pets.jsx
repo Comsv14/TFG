@@ -1,21 +1,19 @@
 // PETCONNECT-FRONTEND/src/pages/Pets.jsx
 import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
-import PetCard from '../components/PetCard';
 import PetForm from '../components/PetForm';
+import PetCard from '../components/PetCard';
 
-export default function Pets() {
+export default function Pets({ addToast }) {
   const [pets, setPets] = useState([]);
-  const [editing, setEditing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // 1) Al montar, traemos la lista real
   useEffect(() => {
     const fetchPets = async () => {
       try {
-        const res = await api.get('/api/pets');
-        setPets(res.data);
+        const { data } = await api.get('/api/pets');
+        setPets(data);
       } catch (err) {
         console.error(err);
         setError('No se pudieron cargar las mascotas.');
@@ -26,50 +24,40 @@ export default function Pets() {
     fetchPets();
   }, []);
 
-  const handleSave = petData => {
-    // Se pasa res.data desde PetForm
-    setPets(current =>
-      petData.id
-        ? current.map(p => (p.id === petData.id ? petData : p))
-        : [...current, petData]
-    );
-    setEditing(null);
+  const handleSave = pet => {
+    setPets(curr => {
+      const exists = curr.some(p => p.id === pet.id);
+      if (exists) {
+        return curr.map(p => (p.id === pet.id ? pet : p));
+      }
+      return [pet, ...curr];
+    });
+    addToast('Mascota guardada con éxito', 'success');
   };
 
   const handleDelete = async id => {
-    if (!window.confirm('¿Borrar esta mascota?')) return;
+    if (!window.confirm('¿Seguro que quieres borrar esta mascota?')) return;
     try {
       await api.delete(`/api/pets/${id}`);
-      setPets(current => current.filter(p => p.id !== id));
+      setPets(curr => curr.filter(p => p.id !== id));
+      addToast('Mascota eliminada con éxito', 'success');
     } catch (err) {
       console.error(err);
-      alert('Error borrando la mascota.');
+      addToast('Error al borrar la mascota', 'error');
     }
   };
 
   if (loading) return <p>Cargando mascotas...</p>;
 
   return (
-    <div>
+    <div className="container mt-4">
       <h2 className="mb-4">Mis Mascotas</h2>
       {error && <div className="alert alert-danger">{error}</div>}
-
-      {/* Alta/Edición */}
-      <PetForm
-        petToEdit={editing}
-        onSaved={handleSave}
-        onCancel={() => setEditing(null)}
-      />
-
-      {/* Listado */}
+      <PetForm onSaved={handleSave} addToast={addToast} />
       <div className="row">
         {pets.map(pet => (
           <div className="col-md-4 mb-3" key={pet.id}>
-            <PetCard
-              pet={pet}
-              onEdit={() => setEditing(pet)}
-              onDelete={() => handleDelete(pet.id)}
-            />
+            <PetCard pet={pet} onDelete={handleDelete} onEdit={handleSave} />
           </div>
         ))}
       </div>

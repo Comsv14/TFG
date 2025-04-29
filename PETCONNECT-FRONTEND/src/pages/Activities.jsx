@@ -4,26 +4,21 @@ import api from '../api/axios';
 import ActivityForm from '../components/ActivityForm';
 import ActivityCard from '../components/ActivityCard';
 
-export default function Activities() {
+export default function Activities({ addToast }) {
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Función para cargar actividades + comentarios
   const loadActivities = async () => {
     try {
-      // 1) Traemos todas las actividades
       const { data: acts } = await api.get('/api/activities');
-      // 2) Inicializamos comentarios y joined
       const initialized = acts.map(a => ({
         ...a,
-        joined: a.users?.some(u => u.id === a.id) ?? false,
+        joined: false,
         comments: [],
         newComment: ''
       }));
       setActivities(initialized);
-
-      // 3) Para cada actividad, traemos sus comentarios
       await Promise.all(
         initialized.map(async a => {
           const { data: c } = await api.get('/api/comments', {
@@ -38,38 +33,38 @@ export default function Activities() {
       );
     } catch (err) {
       console.error(err);
-      setError('No se pudieron cargar las actividades.');
+      setError('No se pudieron cargar las actividades');
+      addToast('Error al cargar actividades', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  // Al montar, cargamos
   useEffect(() => {
     loadActivities();
   }, []);
 
-  // Cuando creamos, recargamos
   const handleCreate = () => {
-    setLoading(true);
     loadActivities();
+    addToast('Actividad creada con éxito', 'success');
   };
 
-  // Apuntarse...
   const handleJoin = async id => {
     try {
       await api.post(`/api/activities/${id}/register`);
       loadActivities();
+      addToast('Apuntado a la actividad', 'success');
     } catch (err) {
       console.error(err);
-      alert('Error al apuntarse.');
+      addToast('Error al apuntarse', 'error');
     }
   };
 
-  // Gestión comentarios...
   const handleCommentChange = (id, text) => {
     setActivities(curr =>
-      curr.map(a => (a.id === id ? { ...a, newComment: text } : a))
+      curr.map(a =>
+        a.id === id ? { ...a, newComment: text } : a
+      )
     );
   };
 
@@ -82,23 +77,23 @@ export default function Activities() {
         body: act.newComment
       });
       loadActivities();
+      addToast('Comentario añadido', 'success');
     } catch (err) {
       console.error(err);
-      alert('Error al enviar comentario.');
+      addToast('Error al enviar comentario', 'error');
     }
   };
 
   if (loading) return <p>Cargando actividades...</p>;
 
   return (
-    <div>
+    <div className="container mt-4">
       <h2 className="mb-4">Actividades Colectivas</h2>
       {error && <div className="alert alert-danger">{error}</div>}
-
-      {/* Proponer */}
-      <ActivityForm onCreated={handleCreate} />
-
-      {/* Listado */}
+      <ActivityForm
+        onCreated={handleCreate}
+        addToast={addToast}
+      />
       <div className="row">
         {activities.map(act => (
           <div className="col-md-6 mb-3" key={act.id}>

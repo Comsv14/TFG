@@ -2,13 +2,13 @@
 import React, { useState } from 'react';
 import api from '../api/axios';
 
-export default function ActivityForm({ onCreated }) {
+export default function ActivityForm({ onCreated, addToast }) {
   const [form, setForm] = useState({
     title: '',
     description: '',
     location: '',
     starts_at: '',
-    ends_at: '',
+    ends_at: ''
   });
   const [loading, setLoading] = useState(false);
 
@@ -19,18 +19,28 @@ export default function ActivityForm({ onCreated }) {
 
   const handleSubmit = async e => {
     e.preventDefault();
-    if (!form.title.trim()) return alert('El título es obligatorio');
+    if (!form.title.trim()) {
+      addToast('El título es obligatorio', 'error');
+      return;
+    }
     setLoading(true);
     try {
-      // 1) Creamos la actividad en el servidor
       await api.post('/api/activities', form);
-      // 2) Notificamos al padre para recargar la lista
+      addToast('Actividad propuesta', 'success');
       onCreated();
-      // 3) Limpiamos el formulario
-      setForm({ title:'', description:'', location:'', starts_at:'', ends_at:'' });
+      setForm({
+        title: '',
+        description: '',
+        location: '',
+        starts_at: '',
+        ends_at: ''
+      });
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || 'Error creando actividad');
+      addToast(
+        err.response?.data?.message || 'Error creando actividad',
+        'error'
+      );
     } finally {
       setLoading(false);
     }
@@ -90,11 +100,15 @@ export default function ActivityForm({ onCreated }) {
               />
             </div>
           </div>
-          <button type="submit" className="btn btn-success" disabled={loading}>
+          <button
+            type="submit"
+            className="btn btn-success"
+            disabled={loading}
+          >
             {loading ? 'Proponiendo...' : 'Proponer Actividad'}
           </button>
         </form>
       </div>
     </div>
-  );
+);
 }

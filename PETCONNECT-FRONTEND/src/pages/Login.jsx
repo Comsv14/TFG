@@ -1,71 +1,63 @@
-// src/pages/Login.jsx
+// PETCONNECT-FRONTEND/src/pages/Login.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 
-export default function Login() {
-  const navigate = useNavigate();
+export default function Login({ addToast }) {
   const [form, setForm] = useState({ email: '', password: '' });
-  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleChange = e => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm(f => ({ ...f, [name]: value }));
   };
 
   const handleSubmit = async e => {
     e.preventDefault();
-    setError('');
+    setLoading(true);
     try {
-      // 1) Obtén la cookie CSRF
-      await api.get('/sanctum/csrf-cookie');
-
-      // 2) Llamada al login
-      const res = await api.post('/api/login', form);
-
-      // 3) Guarda el token y redirige
-      localStorage.setItem('token', res.data.token);
+      const { data } = await api.post('/api/login', form);
+      localStorage.setItem('token', data.token);
+      addToast('Inicio de sesión exitoso', 'success');
       navigate('/pets');
     } catch (err) {
-      setError(
-        err.response?.data?.message ||
-        'Credenciales inválidas'
+      console.error(err);
+      addToast(
+        err.response?.data?.message || 'Credenciales incorrectas',
+        'error'
       );
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="row justify-content-center">
-      <div className="col-md-6">
-        <h2 className="mb-4">Login</h2>
-        {error && <div className="alert alert-danger">{error}</div>}
-        <form onSubmit={handleSubmit}>
-          <div className="mb-3">
-            <label className="form-label">Email</label>
-            <input
-              type="email"
-              name="email"
-              className="form-control"
-              value={form.email}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div className="mb-3">
-            <label className="form-label">Contraseña</label>
-            <input
-              type="password"
-              name="password"
-              className="form-control"
-              value={form.password}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <button type="submit" className="btn btn-primary">
-            Iniciar Sesión
-          </button>
-        </form>
-      </div>
+    <div className="container mt-5">
+      <h2>Iniciar Sesión</h2>
+      <form onSubmit={handleSubmit}>
+        <input
+          name="email"
+          type="email"
+          className="form-control mb-2"
+          placeholder="Email"
+          value={form.email}
+          onChange={handleChange}
+          required
+        />
+        <input
+          name="password"
+          type="password"
+          className="form-control mb-3"
+          placeholder="Contraseña"
+          value={form.password}
+          onChange={handleChange}
+          required
+        />
+        <button className="btn btn-primary" disabled={loading}>
+          {loading ? 'Ingresando...' : 'Ingresar'}
+        </button>
+      </form>
     </div>
   );
 }

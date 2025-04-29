@@ -2,12 +2,12 @@
 import React, { useState } from 'react';
 import api from '../api/axios';
 
-export default function LostPetForm({ onReport }) {
+export default function LostPetForm({ onReport, addToast }) {
   const [form, setForm] = useState({
     pet_name: '',
     description: '',
     last_seen_location: '',
-    photo: null,
+    photo: null
   });
   const [loading, setLoading] = useState(false);
 
@@ -15,7 +15,7 @@ export default function LostPetForm({ onReport }) {
     const { name, value, files } = e.target;
     setForm(f => ({
       ...f,
-      [name]: name === 'photo' ? files[0] : value,
+      [name]: name === 'photo' ? files[0] : value
     }));
   };
 
@@ -30,19 +30,19 @@ export default function LostPetForm({ onReport }) {
       if (form.photo) fd.append('photo', form.photo);
 
       const { data } = await api.post('/api/lost-pets', fd, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
-
       onReport(data);
-      setForm({ pet_name: '', description: '', last_seen_location: '', photo: null });
+      addToast('Mascota perdida reportada', 'success');
+      setForm({
+        pet_name: '',
+        description: '',
+        last_seen_location: '',
+        photo: null
+      });
     } catch (err) {
       console.error(err);
-      if (err.response?.data?.errors) {
-        const msgs = Object.values(err.response.data.errors).flat().join('\n');
-        alert('Errores de validación:\n' + msgs);
-      } else {
-        alert('Error al reportar la mascota perdida.');
-      }
+      addToast('Error al reportar la mascota perdida', 'error');
     } finally {
       setLoading(false);
     }
@@ -82,11 +82,15 @@ export default function LostPetForm({ onReport }) {
             className="form-control mb-3"
             onChange={handleChange}
           />
-          <button type="submit" className="btn btn-danger" disabled={loading}>
+          <button
+            type="submit"
+            className="btn btn-danger"
+            disabled={loading}
+          >
             {loading ? 'Publicando...' : 'Publicar'}
           </button>
         </form>
       </div>
     </div>
-  );
+);
 }

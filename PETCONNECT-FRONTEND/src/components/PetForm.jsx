@@ -2,9 +2,17 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
 
-export default function PetForm({ petToEdit, onSaved, onCancel }) {
+export default function PetForm({
+  petToEdit,
+  onSaved,
+  addToast,
+  onCancel
+}) {
   const [form, setForm] = useState({
-    name: '', breed: '', age: '', photo: null
+    name: '',
+    breed: '',
+    age: '',
+    photo: null
   });
   const [loading, setLoading] = useState(false);
 
@@ -17,17 +25,16 @@ export default function PetForm({ petToEdit, onSaved, onCancel }) {
         photo: null
       });
     } else {
-      setForm({ name:'', breed:'', age:'', photo:null });
+      setForm({ name: '', breed: '', age: '', photo: null });
     }
   }, [petToEdit]);
 
   const handleChange = e => {
     const { name, value, files } = e.target;
-    if (name === 'photo') {
-      setForm(f => ({ ...f, photo: files[0] }));
-    } else {
-      setForm(f => ({ ...f, [name]: value }));
-    }
+    setForm(f => ({
+      ...f,
+      [name]: name === 'photo' ? files[0] : value
+    }));
   };
 
   const handleSubmit = async e => {
@@ -40,21 +47,23 @@ export default function PetForm({ petToEdit, onSaved, onCancel }) {
       fd.append('age', form.age);
       if (form.photo) fd.append('photo', form.photo);
 
-      let res;
-      if (petToEdit?.id) {
-        res = await api.post(`/api/pets/${petToEdit.id}?_method=PUT`, fd, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-      } else {
-        res = await api.post('/api/pets', fd, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-      }
-      onSaved(res.data);
-      setForm({ name:'', breed:'', age:'', photo:null });
+      const url = petToEdit?.id
+        ? `/api/pets/${petToEdit.id}?_method=PUT`
+        : '/api/pets';
+      const { data } = await api.post(url, fd, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      onSaved(data);
+      addToast(
+        petToEdit ? 'Mascota actualizada' : 'Mascota añadida',
+        'success'
+      );
+      setForm({ name: '', breed: '', age: '', photo: null });
+      if (petToEdit && onCancel) onCancel();
     } catch (err) {
       console.error(err);
-      alert('Error guardando la mascota');
+      addToast('Error guardando la mascota', 'error');
     } finally {
       setLoading(false);
     }
@@ -97,18 +106,30 @@ export default function PetForm({ petToEdit, onSaved, onCancel }) {
             className="form-control mb-3"
             onChange={handleChange}
           />
-          <button type="submit" className="btn btn-primary me-2" disabled={loading}>
+          <button
+            type="submit"
+            className="btn btn-primary me-2"
+            disabled={loading}
+          >
             {loading
-              ? petToEdit ? 'Guardando...' : 'Añadiendo...'
-              : petToEdit ? 'Guardar cambios' : 'Añadir mascota'}
+              ? petToEdit
+                ? 'Guardando...'
+                : 'Añadiendo...'
+              : petToEdit
+              ? 'Guardar cambios'
+              : 'Añadir mascota'}
           </button>
           {petToEdit && (
-            <button type="button" className="btn btn-secondary" onClick={onCancel}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={onCancel}
+            >
               Cancelar
             </button>
           )}
         </form>
       </div>
     </div>
-  );
+);
 }

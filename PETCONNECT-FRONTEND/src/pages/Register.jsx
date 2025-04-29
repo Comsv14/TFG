@@ -1,105 +1,86 @@
 // PETCONNECT-FRONTEND/src/pages/Register.jsx
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
+import { useNavigate } from 'react-router-dom';
 
-export default function Register() {
-  const navigate = useNavigate();
+export default function Register({ addToast }) {
   const [form, setForm] = useState({
     name: '',
     email: '',
     password: '',
     password_confirmation: ''
   });
-  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleChange = e => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm(f => ({ ...f, [name]: value }));
   };
 
   const handleSubmit = async e => {
     e.preventDefault();
-    setError('');
+    setLoading(true);
     try {
-      // 1) Asegurarnos de tener la cookie CSRF
-      await api.get('/sanctum/csrf-cookie');
-
-      // 2) Llamada al endpoint de registro
       await api.post('/api/register', form);
-
-      // 3) Si va bien, vamos al login
+      addToast('Registro exitoso. ¡Bienvenido!', 'success');
       navigate('/login');
     } catch (err) {
-      // Mostramos todo el error en consola
-      console.error('🛑 Register failed:', err);
-      if (err.response) {
-        console.error('Response status:', err.response.status);
-        console.error('Response data:', err.response.data);
+      console.error(err);
+      if (err.response?.data?.errors) {
+        const msgs = Object.values(err.response.data.errors).flat().join('\n');
+        addToast(msgs, 'error');
+      } else {
+        addToast(err.response?.data?.message || 'Error en el registro', 'error');
       }
-      // Y sacamos mensaje al usuario
-      setError(
-        err.response?.data?.errors
-          ? Object.values(err.response.data.errors).flat().join(' ')
-          : err.response?.data?.message || 'Error inesperado'
-      );
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="row justify-content-center">
-      <div className="col-md-6">
-        <h2 className="mb-4">Registro</h2>
-        {error && <div className="alert alert-danger">{error}</div>}
-        <form onSubmit={handleSubmit}>
-          <div className="mb-3">
-            <label className="form-label">Nombre</label>
-            <input
-              type="text"
-              name="name"
-              className="form-control"
-              value={form.name}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div className="mb-3">
-            <label className="form-label">Email</label>
-            <input
-              type="email"
-              name="email"
-              className="form-control"
-              value={form.email}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div className="mb-3">
-            <label className="form-label">Contraseña</label>
-            <input
-              type="password"
-              name="password"
-              className="form-control"
-              value={form.password}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div className="mb-3">
-            <label className="form-label">Repite Contraseña</label>
-            <input
-              type="password"
-              name="password_confirmation"
-              className="form-control"
-              value={form.password_confirmation}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <button type="submit" className="btn btn-primary">
-            Registrarse
-          </button>
-        </form>
-      </div>
+    <div className="container mt-5">
+      <h2>Registro de usuario</h2>
+      <form onSubmit={handleSubmit}>
+        <input
+          name="name"
+          className="form-control mb-2"
+          placeholder="Nombre"
+          value={form.name}
+          onChange={handleChange}
+          required
+        />
+        <input
+          name="email"
+          type="email"
+          className="form-control mb-2"
+          placeholder="Email"
+          value={form.email}
+          onChange={handleChange}
+          required
+        />
+        <input
+          name="password"
+          type="password"
+          className="form-control mb-2"
+          placeholder="Contraseña"
+          value={form.password}
+          onChange={handleChange}
+          required
+        />
+        <input
+          name="password_confirmation"
+          type="password"
+          className="form-control mb-3"
+          placeholder="Repetir contraseña"
+          value={form.password_confirmation}
+          onChange={handleChange}
+          required
+        />
+        <button className="btn btn-primary" disabled={loading}>
+          {loading ? 'Registrando...' : 'Registrarse'}
+        </button>
+      </form>
     </div>
   );
 }

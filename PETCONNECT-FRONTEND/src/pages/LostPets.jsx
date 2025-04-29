@@ -1,9 +1,10 @@
+// PETCONNECT-FRONTEND/src/pages/LostPets.jsx
 import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
 import LostPetForm from '../components/LostPetForm';
 import LostPetCard from '../components/LostPetCard';
 
-export default function LostPets() {
+export default function LostPets({ addToast }) {
   const [lostList, setLostList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -18,7 +19,8 @@ export default function LostPets() {
             sightings: Array.isArray(pet.sightings) ? pet.sightings : []
           }))
         );
-      } catch {
+      } catch (err) {
+        console.error(err);
         setError('No se pudieron cargar las mascotas perdidas.');
       } finally {
         setLoading(false);
@@ -26,34 +28,38 @@ export default function LostPets() {
     })();
   }, []);
 
-  // Aquí ya no hacemos POST, simplemente añadimos el pet que nos viene
   const handleReport = pet => {
-    setLostList(prev => [{ ...pet, sightings: [] }, ...prev]);
+    setLostList(curr => [{ ...pet, sightings: [] }, ...curr]);
+    addToast('Mascota perdida reportada', 'success');
   };
 
   const handleSighting = async (id, sightingData) => {
     try {
-      const { data } = await api.post(`/api/lost-pets/${id}/sightings`, sightingData);
-      setLostList(prev =>
-        prev.map(p =>
-          p.id === id ? { ...p, sightings: [...p.sightings, data] } : p
+      const { data } = await api.post(
+        `/api/lost-pets/${id}/sightings`,
+        sightingData
+      );
+      setLostList(curr =>
+        curr.map(p =>
+          p.id === id
+            ? { ...p, sightings: [...p.sightings, data] }
+            : p
         )
       );
-    } catch {
-      alert('Error al reportar avistamiento.');
+      addToast('Avistamiento reportado', 'success');
+    } catch (err) {
+      console.error(err);
+      addToast('Error al reportar avistamiento', 'error');
     }
   };
 
   if (loading) return <p>Cargando mascotas perdidas...</p>;
 
   return (
-    <div>
+    <div className="container mt-4">
       <h2 className="mb-4">Mascotas Perdidas</h2>
       {error && <div className="alert alert-danger">{error}</div>}
-
-      {/* Ahora LostPetForm es quien hace el POST y nos devuelve el pet */}
-      <LostPetForm onReport={handleReport} />
-
+      <LostPetForm onReport={handleReport} addToast={addToast} />
       <div className="row">
         {lostList.map(pet => (
           <div className="col-md-4 mb-3" key={pet.id}>
