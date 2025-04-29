@@ -4,8 +4,8 @@ import React from 'react';
 export default function PetCard({ pet, onEdit, onDelete }) {
   return (
     <div className="card h-100 shadow-sm">
-      {pet.photo && (
-        <img src={pet.photo} className="card-img-top" alt={pet.name} />
+      {pet.photo_url && (
+  <img src={pet.photo_url} className="card-img-top" alt={pet.name} />
       )}
       <div className="card-body d-flex flex-column">
         <h5 className="card-title">{pet.name}</h5>

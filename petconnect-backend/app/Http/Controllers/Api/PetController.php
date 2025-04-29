@@ -1,10 +1,10 @@
 <?php
-// petconnect-backend/app/Http/Controllers/Api/PetController.php
 
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Pet;
+use App\Models\PetImage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -12,11 +12,13 @@ class PetController extends Controller
 {
     public function index(Request $request)
     {
-        $pets = Pet::where('user_id', $request->user()->id)
+        $pets = Pet::with('images')                  // eager-load imágenes
+            ->where('user_id', $request->user()->id)
             ->get()
             ->map(function (Pet $pet) {
-                $pet->photo = $pet->photo
-                    ? url(Storage::url($pet->photo))
+                // Si tiene al menos 1 imagen, crea una URL pública:
+                $pet->photo_url = $pet->images->count()
+                    ? url(Storage::url($pet->images->first()->path))
                     : null;
                 return $pet;
             });
@@ -30,21 +32,22 @@ class PetController extends Controller
             'name'  => 'required|string|max:100',
             'breed' => 'nullable|string|max:100',
             'age'   => 'nullable|integer|min:0',
-            'photo' => 'nullable|image|max:2048',
+            'photo' => 'nullable|image|max:4096',
         ]);
 
-        if ($request->hasFile('photo')) {
-            $path = $request->file('photo')->store('pets', 'public');
-            $data['photo'] = $path;
-        }
-
         $data['user_id'] = $request->user()->id;
-
         $pet = Pet::create($data);
 
-        $pet->photo = $pet->photo
-            ? url(Storage::url($pet->photo))
-            : null;
+        // Si subieron foto, la guardamos en pet_images:
+        if ($request->hasFile('photo')) {
+            $path = $request->file('photo')->store('pets', 'public');
+            $pet->images()->create([
+                'path' => $path
+            ]);
+            $pet->photo_url = url(Storage::url($path));
+        } else {
+            $pet->photo_url = null;
+        }
 
         return response()->json($pet, 201);
     }
@@ -52,11 +55,10 @@ class PetController extends Controller
     public function show(Pet $pet)
     {
         $this->authorize('view', $pet);
-
-        $pet->photo = $pet->photo
-            ? url(Storage::url($pet->photo))
+        $pet->load('images');
+        $pet->photo_url = $pet->images->count()
+            ? url(Storage::url($pet->images->first()->path))
             : null;
-
         return response()->json($pet);
     }
 
@@ -68,24 +70,28 @@ class PetController extends Controller
             'name'  => 'required|string|max:100',
             'breed' => 'nullable|string|max:100',
             'age'   => 'nullable|integer|min:0',
-            'photo' => 'nullable|image|max:2048',
+            'photo' => 'nullable|image|max:4096',
         ]);
-
-        if ($request->hasFile('photo')) {
-            if ($pet->photo) {
-                // borra la foto vieja
-                $old = str_replace('/storage/', '', parse_url($pet->photo, PHP_URL_PATH));
-                Storage::disk('public')->delete($old);
-            }
-            $path = $request->file('photo')->store('pets', 'public');
-            $data['photo'] = $path;
-        }
 
         $pet->update($data);
 
-        $pet->photo = $pet->photo
-            ? url(Storage::url($pet->photo))
-            : null;
+        // Si cambian la foto, la reemplazamos:
+        if ($request->hasFile('photo')) {
+            // Borramos todas las imágenes previas
+            foreach ($pet->images as $img) {
+                Storage::disk('public')->delete($img->path);
+                $img->delete();
+            }
+            // Subimos la nueva
+            $path = $request->file('photo')->store('pets', 'public');
+            $pet->images()->create(['path' => $path]);
+            $pet->photo_url = url(Storage::url($path));
+        } else {
+            // Recalculamos URL si no cambiaron foto
+            $pet->photo_url = $pet->images->count()
+                ? url(Storage::url($pet->images->first()->path))
+                : null;
+        }
 
         return response()->json($pet);
     }
@@ -94,13 +100,13 @@ class PetController extends Controller
     {
         $this->authorize('delete', $pet);
 
-        if ($pet->photo) {
-            $old = str_replace('/storage/', '', parse_url($pet->photo, PHP_URL_PATH));
-            Storage::disk('public')->delete($old);
+        // Borramos archivos e imágenes asociadas
+        foreach ($pet->images as $img) {
+            Storage::disk('public')->delete($img->path);
         }
+        $pet->images()->delete();
 
         $pet->delete();
-
         return response()->noContent();
     }
 }
