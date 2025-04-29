@@ -1,7 +1,6 @@
-// PETCONNECT-FRONTEND/src/pages/Register.jsx
 import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/axios';
-import { useNavigate } from 'react-router-dom';
 
 export default function Register({ addToast }) {
   const [form, setForm] = useState({
@@ -23,15 +22,15 @@ export default function Register({ addToast }) {
     setLoading(true);
     try {
       await api.post('/api/register', form);
-      addToast('Registro exitoso. ¡Bienvenido!', 'success');
-      navigate('/login');
+      addToast('Registro exitoso. Ahora inicia sesión.', 'success');
+      navigate('/login', { replace: true });
     } catch (err) {
       console.error(err);
-      if (err.response?.data?.errors) {
-        const msgs = Object.values(err.response.data.errors).flat().join('\n');
-        addToast(msgs, 'error');
+      const errs = err.response?.data?.errors;
+      if (errs) {
+        addToast(Object.values(errs).flat().join('\n'), 'error');
       } else {
-        addToast(err.response?.data?.message || 'Error en el registro', 'error');
+        addToast(err.response?.data?.message || 'Error en registro', 'error');
       }
     } finally {
       setLoading(false);
@@ -39,8 +38,8 @@ export default function Register({ addToast }) {
   };
 
   return (
-    <div className="container mt-5">
-      <h2>Registro de usuario</h2>
+    <div className="page-auth">
+      <h2>Registro de Usuario</h2>
       <form onSubmit={handleSubmit}>
         <input
           name="name"
@@ -72,15 +71,21 @@ export default function Register({ addToast }) {
           name="password_confirmation"
           type="password"
           className="form-control mb-3"
-          placeholder="Repetir contraseña"
+          placeholder="Repite la contraseña"
           value={form.password_confirmation}
           onChange={handleChange}
           required
         />
-        <button className="btn btn-primary" disabled={loading}>
+        <button className="btn btn-primary w-100" disabled={loading}>
           {loading ? 'Registrando...' : 'Registrarse'}
         </button>
       </form>
+      <p className="mt-3 text-center">
+        ¿Ya tienes cuenta?{' '}
+        <Link to="/login" className="btn btn-link p-0">
+          Inicia sesión
+        </Link>
+      </p>
     </div>
   );
 }

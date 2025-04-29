@@ -1,8 +1,6 @@
-// PETCONNECT-FRONTEND/src/components/Toast.jsx
 import React, { useEffect } from 'react';
 
 export default function Toast({ id, message, bg, onClose }) {
-  // Auto‐close a los 3s
   useEffect(() => {
     const timer = setTimeout(() => onClose(id), 3000);
     return () => clearTimeout(timer);

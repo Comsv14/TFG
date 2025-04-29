@@ -1,4 +1,3 @@
-// PETCONNECT-FRONTEND/src/App.jsx
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   Routes,
@@ -22,13 +21,12 @@ export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Cada vez que cambie el token, guardamos o borramos localStorage
   useEffect(() => {
-    if (token) localStorage.setItem('token', token);
-    else localStorage.removeItem('token');
+    token
+      ? localStorage.setItem('token', token)
+      : localStorage.removeItem('token');
   }, [token]);
 
-  // Añade un toast
   const addToast = useCallback((message, type = 'info') => {
     const id = Date.now();
     const bg =
@@ -40,17 +38,15 @@ export default function App() {
     setToasts((ts) => [...ts, { id, message, bg }]);
   }, []);
 
-  // Elimina un toast
   const removeToast = useCallback((id) => {
     setToasts((ts) => ts.filter((t) => t.id !== id));
   }, []);
 
-  // Logout: llama a la API, borra token y redirige a login
   const handleLogout = async () => {
     try {
       await api.post('/api/logout');
-    } catch (e) {
-      console.error(e);
+    } catch {
+      /* ignoramos errores */
     } finally {
       setToken(null);
       addToast('Has cerrado sesión', 'info');
@@ -58,25 +54,16 @@ export default function App() {
     }
   };
 
-  // Si no estás logueado y estás en ruta protegida, redirige a /login
   const RequireAuth = ({ children }) => {
-    if (!token) {
-      return <Navigate to="/login" replace state={{ from: location }} />;
-    }
-    return children;
+    return token ? children : <Navigate to="/login" replace state={{ from: location }}/> ;
   };
 
-  // Si estás logueado y vas a /login o /register, envía a /pets
   const RequireGuest = ({ children }) => {
-    if (token) {
-      return <Navigate to="/pets" replace />;
-    }
-    return children;
+    return token ? <Navigate to="/pets" replace /> : children;
   };
 
   return (
     <>
-      {/* Navbar solo si hay token */}
       {token && (
         <nav className="navbar navbar-expand-lg navbar-light bg-light">
           <div className="container">
@@ -137,7 +124,6 @@ export default function App() {
         </nav>
       )}
 
-      {/* Toasts */}
       <div
         className="toast-container"
         style={{
@@ -152,21 +138,8 @@ export default function App() {
         ))}
       </div>
 
-      {/* Rutas */}
       <div className="container mt-4">
         <Routes>
-          {/* Rutas públicas */}
-          <Route
-            path="/login"
-            element={
-              <RequireGuest>
-                <Login
-                  addToast={addToast}
-                  onLogin={(tok) => setToken(tok)}
-                />
-              </RequireGuest>
-            }
-          />
           <Route
             path="/register"
             element={
@@ -175,8 +148,15 @@ export default function App() {
               </RequireGuest>
             }
           />
+          <Route
+            path="/login"
+            element={
+              <RequireGuest>
+                <Login addToast={addToast} onLogin={(tok) => setToken(tok)} />
+              </RequireGuest>
+            }
+          />
 
-          {/* Rutas protegidas */}
           <Route
             path="/pets"
             element={
@@ -202,7 +182,6 @@ export default function App() {
             }
           />
 
-          {/* Redirecciones */}
           <Route
             path="/"
             element={

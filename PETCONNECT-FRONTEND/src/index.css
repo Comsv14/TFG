@@ -1,8 +1,123 @@
 /* src/index.css */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+:root {
+  --color-bg: #f5f7fa;
+  --color-card-bg: #ffffff;
+  --color-primary: #3498db;
+  --color-primary-dark: #2980b9;
+  --color-text: #2c3e50;
+  --radius: 0.5rem;
+  --transition: 0.3s ease;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: 'Inter', sans-serif;
+}
+
+/* Navbar */
+.navbar {
+  background-color: #fff !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  padding: 0.75rem 1rem;
+}
+.navbar-brand, .nav-link {
+  color: var(--color-text) !important;
+  font-weight: 600;
+}
+.nav-link.active {
+  color: var(--color-primary) !important;
+}
+
+/* Container ancho fijo */
+.container {
+  max-width: 1140px;
+  margin: 0 auto;
+}
+
+/* Tarjetas */
+.card {
+  background: var(--color-card-bg);
+  border: none;
+  border-radius: var(--radius);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  overflow: hidden;
+}
+.card-body {
+  padding: 1rem;
+}
+
+/* Imágenes uniformes */
+.card-img-top {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+/* Formularios */
+.form-control {
+  border-radius: var(--radius);
+  border: 1px solid rgba(0,0,0,0.1);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.form-control:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 0.2rem rgba(52,152,219,0.25);
+}
+
+/* Botones */
+.btn-primary {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  border-radius: var(--radius);
+  transition: background var(--transition), border-color var(--transition);
+}
+.btn-primary:hover {
+  background-color: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+}
+.btn-danger {
+  border-radius: var(--radius);
+}
+.btn-success {
+  border-radius: var(--radius);
+}
+
+/* Toasts */
+.toast {
+  border-radius: var(--radius);
+}
 .toast-container {
-    position: fixed;
-    top: 1rem;
-    right: 1rem;
-    z-index: 1080;
-  }
-  
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1080;
+}
+
+/* Formularios de login/register centrados */
+.page-auth {
+  max-width: 400px;
+  margin: 4rem auto;
+  padding: 2rem;
+  background: #fff;
+  border-radius: var(--radius);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+}
+.page-auth h2 {
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+  text-align: center;
+}
+.page-auth .btn-link {
+  text-decoration: none;
+  font-weight: 500;
+}

@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class Activity extends Model
 {
@@ -15,13 +15,18 @@ class Activity extends Model
         'location',
         'starts_at',
         'ends_at',
+        'user_id',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
     public function users()
     {
         return $this->belongsToMany(User::class)
                     ->withPivot('registered_at');
-                    // ->withTimestamps();  // eliminado
     }
 
     public function comments()

@@ -1,12 +1,11 @@
-// PETCONNECT-FRONTEND/src/components/ActivityForm.jsx
 import React, { useState } from 'react';
 import api from '../api/axios';
 
-export default function ActivityForm({ onCreated, addToast }) {
+export default function ActivityForm({ addToast, onCreated }) {
   const [form, setForm] = useState({
     title: '',
-    description: '',
     location: '',
+    description: '',
     starts_at: '',
     ends_at: ''
   });
@@ -19,19 +18,14 @@ export default function ActivityForm({ onCreated, addToast }) {
 
   const handleSubmit = async e => {
     e.preventDefault();
-    if (!form.title.trim()) {
-      addToast('El título es obligatorio', 'error');
-      return;
-    }
     setLoading(true);
     try {
       await api.post('/api/activities', form);
-      addToast('Actividad propuesta', 'success');
       onCreated();
       setForm({
         title: '',
-        description: '',
         location: '',
+        description: '',
         starts_at: '',
         ends_at: ''
       });
@@ -51,33 +45,28 @@ export default function ActivityForm({ onCreated, addToast }) {
       <div className="card-body">
         <h5 className="card-title">Proponer nueva actividad</h5>
         <form onSubmit={handleSubmit}>
-          <div className="mb-2">
-            <input
-              name="title"
-              className="form-control"
-              placeholder="Título"
-              value={form.title}
-              onChange={handleChange}
-            />
-          </div>
-          <div className="mb-2">
-            <input
-              name="location"
-              className="form-control"
-              placeholder="Lugar (opcional)"
-              value={form.location}
-              onChange={handleChange}
-            />
-          </div>
-          <div className="mb-2">
-            <textarea
-              name="description"
-              className="form-control"
-              placeholder="Descripción"
-              value={form.description}
-              onChange={handleChange}
-            />
-          </div>
+          <input
+            name="title"
+            className="form-control mb-2"
+            placeholder="Título"
+            value={form.title}
+            onChange={handleChange}
+            required
+          />
+          <input
+            name="location"
+            className="form-control mb-2"
+            placeholder="Lugar (opcional)"
+            value={form.location}
+            onChange={handleChange}
+          />
+          <textarea
+            name="description"
+            className="form-control mb-2"
+            placeholder="Descripción"
+            value={form.description}
+            onChange={handleChange}
+          />
           <div className="row">
             <div className="col mb-2">
               <label className="form-label small">Inicio</label>
@@ -87,6 +76,7 @@ export default function ActivityForm({ onCreated, addToast }) {
                 className="form-control form-control-sm"
                 value={form.starts_at}
                 onChange={handleChange}
+                required
               />
             </div>
             <div className="col mb-2">
@@ -110,5 +100,5 @@ export default function ActivityForm({ onCreated, addToast }) {
         </form>
       </div>
     </div>
-);
+  );
 }

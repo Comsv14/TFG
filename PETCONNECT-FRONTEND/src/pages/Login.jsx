@@ -1,9 +1,8 @@
-// PETCONNECT-FRONTEND/src/pages/Login.jsx
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/axios';
 
-export default function Login({ addToast }) {
+export default function Login({ addToast, onLogin }) {
   const [form, setForm] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -18,9 +17,9 @@ export default function Login({ addToast }) {
     setLoading(true);
     try {
       const { data } = await api.post('/api/login', form);
-      localStorage.setItem('token', data.token);
+      onLogin(data.token);
       addToast('Inicio de sesión exitoso', 'success');
-      navigate('/pets');
+      navigate('/pets', { replace: true });
     } catch (err) {
       console.error(err);
       addToast(
@@ -33,7 +32,7 @@ export default function Login({ addToast }) {
   };
 
   return (
-    <div className="container mt-5">
+    <div className="page-auth">
       <h2>Iniciar Sesión</h2>
       <form onSubmit={handleSubmit}>
         <input
@@ -54,10 +53,16 @@ export default function Login({ addToast }) {
           onChange={handleChange}
           required
         />
-        <button className="btn btn-primary" disabled={loading}>
+        <button className="btn btn-primary w-100" disabled={loading}>
           {loading ? 'Ingresando...' : 'Ingresar'}
         </button>
       </form>
+      <p className="mt-3 text-center">
+        ¿No tienes cuenta?{' '}
+        <Link to="/register" className="btn btn-link p-0">
+          Regístrate
+        </Link>
+      </p>
     </div>
   );
 }
