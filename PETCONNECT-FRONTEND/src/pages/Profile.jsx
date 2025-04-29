@@ -1,11 +1,15 @@
+// PETCONNECT-FRONTEND/src/pages/Profile.jsx
 import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
+import MapPicker from '../components/MapPicker';
 
 export default function Profile({ addToast }) {
   const [form, setForm] = useState({
     name: '',
     email: '',
     avatar: null,
+    latitude: null,
+    longitude: null,
   });
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -14,10 +18,15 @@ export default function Profile({ addToast }) {
     (async () => {
       try {
         const { data } = await api.get('/api/profile');
-        setForm({ name: data.name, email: data.email, avatar: null });
+        setForm({
+          name: data.name,
+          email: data.email,
+          avatar: null,
+          latitude: data.latitude,
+          longitude: data.longitude,
+        });
         setAvatarPreview(data.avatar_url);
-      } catch (err) {
-        console.error(err);
+      } catch {
         addToast('Error al cargar perfil', 'error');
       }
     })();
@@ -34,6 +43,10 @@ export default function Profile({ addToast }) {
     }
   };
 
+  const handleMapChange = (lat, lng) => {
+    setForm((f) => ({ ...f, latitude: lat, longitude: lng }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -42,16 +55,16 @@ export default function Profile({ addToast }) {
       fd.append('name', form.name);
       fd.append('email', form.email);
       if (form.avatar) fd.append('avatar', form.avatar);
+      if (form.latitude != null) fd.append('latitude', form.latitude);
+      if (form.longitude != null) fd.append('longitude', form.longitude);
 
       const { data } = await api.post('/api/profile', fd, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      setForm((f) => ({ ...f, avatar: null }));
       setAvatarPreview(data.avatar_url);
       addToast('Perfil actualizado', 'success');
-    } catch (err) {
-      console.error(err);
+    } catch {
       addToast('Error al actualizar perfil', 'error');
     } finally {
       setLoading(false);
@@ -76,6 +89,7 @@ export default function Profile({ addToast }) {
             />
           </div>
         )}
+
         <div className="mb-3">
           <label className="form-label">Foto de perfil</label>
           <input
@@ -86,6 +100,7 @@ export default function Profile({ addToast }) {
             onChange={handleChange}
           />
         </div>
+
         <input
           name="name"
           className="form-control mb-2"
@@ -103,7 +118,15 @@ export default function Profile({ addToast }) {
           onChange={handleChange}
           required
         />
-        <button className="btn btn-primary w-100" disabled={loading}>
+
+        <label className="form-label mt-3">Selecciona tu ubicación</label>
+        <MapPicker
+          latitude={form.latitude}
+          longitude={form.longitude}
+          onChange={handleMapChange}
+        />
+
+        <button className="btn btn-primary w-100 mt-3" disabled={loading}>
           {loading ? 'Guardando...' : 'Guardar Cambios'}
         </button>
       </form>
