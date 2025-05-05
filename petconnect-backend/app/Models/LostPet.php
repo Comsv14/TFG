@@ -1,28 +1,32 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
 
 class LostPet extends Model
 {
     protected $fillable = [
-      'pet_name','description','photo',
-      'last_seen_location',
-      'last_seen_latitude','last_seen_longitude',
-      'user_id','found','posted_at'
+        'pet_name',
+        'description',
+        'photo',
+        'last_seen_location',
+        'last_seen_latitude',
+        'last_seen_longitude',
+        'posted_at',
+        'user_id',
     ];
 
-    // timestamps true para created_at/updated_at
-    public $timestamps = true;
+    /**  ← NUEVO: sin created_at / updated_at  */
+    public $timestamps = false;
 
-    public function getPhotoUrlAttribute()
-    {
-        return $this->photo
-            ? url(Storage::url($this->photo))
-            : null;
-    }
+    protected $casts = [
+        'posted_at' => 'datetime',
+    ];
 
+    /*------------------------------------------
+    | Relaciones
+    |-----------------------------------------*/
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -30,6 +34,14 @@ class LostPet extends Model
 
     public function sightings()
     {
-        return $this->hasMany(LostSighting::class);
+        return $this->hasMany(Sighting::class);
+    }
+
+    /*------------------------------------------
+    | Accesores
+    |-----------------------------------------*/
+    public function getPhotoUrlAttribute()
+    {
+        return $this->photo ? asset('storage/'.$this->photo) : null;
     }
 }
