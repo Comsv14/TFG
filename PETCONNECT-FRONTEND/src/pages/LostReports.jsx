@@ -56,7 +56,7 @@ export default function LostReports() {
       });
       fd.append('type', mode);
 
-      await api.post('/lost-reports', fd, {
+      await api.post('/api/lost-reports', fd, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
@@ -69,7 +69,7 @@ export default function LostReports() {
         longitude: null,
         photo: null
       });
-      const res = await api.get('/lost-reports', { params: { type: mode } });
+      const res = await api.get('/api/lost-reports', { params: { type: mode } });
       setReports(res.data);
 
       alert(
@@ -85,7 +85,7 @@ export default function LostReports() {
   // Marca encontrada
   const toggleResolved = async id => {
     try {
-      await api.post(`/lost-reports/${id}/toggle-resolved`);
+        await api.post(`/api/lost-reports/${id}/toggle-resolved`);
       const res = await api.get('/lost-reports', { params: { type: mode } });
       setReports(res.data);
     } catch {

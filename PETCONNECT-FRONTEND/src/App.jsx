@@ -11,6 +11,7 @@ import api from './api/axios';
 import Toast from './components/Toast';
 import Pets from './pages/Pets';
 import LostPets from './pages/LostPets';
+import LostReports from './pages/LostReports';  // <-- Importamos LostReports
 import Activities from './pages/Activities';
 import Register from './pages/Register';
 import Login from './pages/Login';
@@ -116,6 +117,16 @@ export default function App() {
                     }
                   >
                     Perdidas
+                  </NavLink>
+                </li>
+                <li className="nav-item">
+                  <NavLink
+                    to="/lost-reports"
+                    className={({ isActive }) =>
+                      'nav-link' + (isActive ? ' active' : '')
+                    }
+                  >
+                    Reportes Perdidas
                   </NavLink>
                 </li>
                 <li className="nav-item dropdown">
@@ -225,6 +236,14 @@ export default function App() {
             element={
               <RequireAuth>
                 <LostPets addToast={addToast} />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/lost-reports"
+            element={
+              <RequireAuth>
+                <LostReports addToast={addToast} />
               </RequireAuth>
             }
           />
