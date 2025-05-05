@@ -1,11 +1,18 @@
-// src/pages/LostPets.jsx
-
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import api from '../api/axios';
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  Fragment,
+} from 'react';
+import { Link } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import L from 'leaflet';
+import api from '../api/axios';
 
-// Leaflet default marker icon setup
+/* -------------------------------------------------
+   Leaflet – icono por defecto (CDN)
+-------------------------------------------------- */
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
@@ -16,7 +23,9 @@ L.Icon.Default.mergeOptions({
     'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.3/images/marker-shadow.png',
 });
 
-// Haversine formula (km)
+/* -------------------------------------------------
+   Utilidad: distancia Haversine (km)
+-------------------------------------------------- */
 function distanceKm(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -29,11 +38,14 @@ function distanceKm(lat1, lon1, lat2, lon2) {
   return 2 * R * Math.asin(Math.sqrt(a));
 }
 
+/* -------------------------------------------------
+   Componente
+-------------------------------------------------- */
 export default function LostPets({ addToast, user }) {
   const [lostPets, setLostPets] = useState([]);
   const [expandedId, setExpandedId] = useState(null);
 
-  // filter state
+  /* ------------------ Filtros ------------------ */
   const [filters, setFilters] = useState({
     name: '',
     province: '',
@@ -44,11 +56,12 @@ export default function LostPets({ addToast, user }) {
     recentFirst: true,
   });
 
-  // fetch data
+  /* ------------------ Fetch ------------------ */
   const fetchLostPets = useCallback(async () => {
     try {
-      const { data } = await api.get('/api/lost-pets');
-      setLostPets(data);
+      const res = await api.get('/api/lost-pets');
+      // la API devuelve LostPetResource collection
+      setLostPets(res.data.data ?? res.data);
     } catch {
       addToast('Error cargando pérdidas', 'error');
     }
@@ -58,49 +71,47 @@ export default function LostPets({ addToast, user }) {
     fetchLostPets();
   }, [fetchLostPets]);
 
-  // extract unique provinces
+  /* ---------- Provincias únicas ---------- */
   const provinces = useMemo(
     () =>
       Array.from(
         new Set(
           lostPets
-            .map((p) => p.last_seen_location)
+            .map((p) => p.location)
             .filter((loc) => loc && loc.trim() !== '')
         )
       ),
     [lostPets]
   );
 
-  // apply filters + sort
+  /* ---------- Aplicar filtros + sort ---------- */
   const filtered = useMemo(() => {
     let arr = lostPets.filter((p) => {
-      // by name
+      // por nombre
       if (
         filters.name &&
-        !p.pet_name.toLowerCase().includes(filters.name.toLowerCase())
+        !p.pet.name.toLowerCase().includes(filters.name.toLowerCase())
       )
         return false;
-      // by province
-      if (filters.province && p.last_seen_location !== filters.province)
-        return false;
-      // by date
+      // por provincia
+      if (filters.province && p.location !== filters.province) return false;
+      // por fecha
       const dt = new Date(p.posted_at);
       if (filters.fromDate && dt < new Date(filters.fromDate)) return false;
       if (filters.toDate && dt > new Date(filters.toDate)) return false;
-      // near me
-      if (filters.nearMe && user.latitude && user.longitude) {
+      // cerca de mí
+      if (filters.nearMe && user?.latitude && user?.longitude) {
         const km = distanceKm(
           user.latitude,
           user.longitude,
-          p.last_seen_latitude,
-          p.last_seen_longitude
+          p.lat,
+          p.lng
         );
         if (km > filters.maxKm) return false;
       }
       return true;
     });
 
-    // sort by posted_at
     arr.sort((a, b) => {
       const da = new Date(a.posted_at),
         db = new Date(b.posted_at);
@@ -110,16 +121,16 @@ export default function LostPets({ addToast, user }) {
     return arr;
   }, [lostPets, filters, user]);
 
-  // toggle expand
-  function toggleDetails(id) {
+  /* ---------- Toggle detalles ---------- */
+  const toggleDetails = (id) =>
     setExpandedId(expandedId === id ? null : id);
-  }
 
+  /* ---------- Render ---------- */
   return (
-    <>
+    <Fragment>
       <h1 className="mb-4">Mascotas Perdidas</h1>
 
-      {/* — PANEL DE FILTROS — */}
+      {/* -------- PANEL DE FILTROS -------- */}
       <div className="card mb-4 p-3">
         <div className="row g-2">
           <div className="col-md">
@@ -205,7 +216,7 @@ export default function LostPets({ addToast, user }) {
         </div>
       </div>
 
-      {/* — GRID DE TARJETAS — */}
+      {/* -------- GRID DE TARJETAS -------- */}
       <div className="row">
         {filtered.length === 0 && (
           <div className="col-12 text-center text-muted my-5">
@@ -216,22 +227,30 @@ export default function LostPets({ addToast, user }) {
         {filtered.map((p) => (
           <div key={p.id} className="col-md-6 col-lg-4 mb-4">
             <div className="card h-100 shadow-sm">
-              {p.photo && (
+              {/* foto del reporte o, si no, mapa estático */}
+              {p.photo ? (
                 <img
                   src={p.photo}
-                  alt={p.pet_name}
+                  alt={p.pet.name}
+                  className="card-img-top"
+                  style={{ height: '200px', objectFit: 'cover' }}
+                />
+              ) : (
+                <img
+                  src={`https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s+ff0000(${p.lng},${p.lat})/${p.lng},${p.lat},13/300x200?access_token=pk.eyJ1IjoiZGVtb3VzZXIiLCJhIjoiY2s4b2E0cHlvMDMxZDNqcGd2OXc1MGxkMSJ9.48tRArrVJPHWgIqi6qVrbA`}
+                  alt="map"
                   className="card-img-top"
                   style={{ height: '200px', objectFit: 'cover' }}
                 />
               )}
 
               <div className="card-body d-flex flex-column">
-                <h5 className="card-title">{p.pet_name}</h5>
-                {p.description && (
-                  <p className="card-text">{p.description}</p>
-                )}
+                <h5 className="card-title">{p.pet.name}</h5>
+
+                {p.comment && <p className="card-text">{p.comment}</p>}
+
                 <p className="mb-1">
-                  <strong>Ubicación:</strong> {p.last_seen_location}
+                  <strong>Ubicación:</strong> {p.location ?? '—'}
                 </p>
                 <p className="text-muted mb-3">
                   Reportado: {new Date(p.posted_at).toLocaleDateString()}
@@ -244,44 +263,40 @@ export default function LostPets({ addToast, user }) {
                   {expandedId === p.id ? 'Ocultar detalles' : 'Ver detalles'}
                 </button>
 
+                {/* Detalles expandibles */}
                 {expandedId === p.id && (
                   <div className="mt-3">
-                    {/* Mapa estático */}
-                    {p.last_seen_latitude != null &&
-                      p.last_seen_longitude != null && (
-                        <div style={{ height: '200px', width: '100%' }}>
-                          <MapContainer
-                            center={[
-                              p.last_seen_latitude,
-                              p.last_seen_longitude,
-                            ]}
-                            zoom={13}
-                            dragging={false}
-                            doubleClickZoom={false}
-                            scrollWheelZoom={false}
-                            zoomControl={false}
-                            style={{ height: '100%', width: '100%' }}
-                          >
-                            <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                            <Marker
-                              position={[
-                                p.last_seen_latitude,
-                                p.last_seen_longitude,
-                              ]}
-                            />
-                          </MapContainer>
-                        </div>
-                      )}
+                    {p.lat != null && p.lng != null && (
+                      <div style={{ height: '200px', width: '100%' }}>
+                        <MapContainer
+                          center={[p.lat, p.lng]}
+                          zoom={13}
+                          dragging={false}
+                          doubleClickZoom={false}
+                          scrollWheelZoom={false}
+                          zoomControl={false}
+                          style={{ height: '100%', width: '100%' }}
+                        >
+                          <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                          <Marker position={[p.lat, p.lng]} />
+                        </MapContainer>
+                      </div>
+                    )}
 
                     <p className="mt-2">
                       <strong>Coordenadas:</strong>{' '}
-                      {p.last_seen_latitude?.toFixed(5)}, {' '}
-                      {p.last_seen_longitude?.toFixed(5)}
+                      {p.lat?.toFixed(5)}, {p.lng?.toFixed(5)}
                     </p>
                     <p>
                       <strong>Reportado por:</strong>{' '}
-                      {p.user?.name || 'Desconocido'}
+                      {p.user?.name ?? 'Desconocido'}
                     </p>
+                    <Link
+                      to={`/lost-pets/${p.id}`}
+                      className="btn btn-outline-secondary btn-sm w-100"
+                    >
+                      Página de detalles
+                    </Link>
                   </div>
                 )}
               </div>
@@ -289,6 +304,6 @@ export default function LostPets({ addToast, user }) {
           </div>
         ))}
       </div>
-    </>
+    </Fragment>
   );
 }

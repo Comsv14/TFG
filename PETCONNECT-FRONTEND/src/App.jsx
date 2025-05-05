@@ -15,6 +15,7 @@ import Pets from './pages/Pets';
 import Activities from './pages/Activities';
 import LostPets from './pages/LostPets';
 import LostReports from './pages/LostReports';
+import LostPetDetail from './pages/LostPetDetail';
 import Register from './pages/Register';
 import Login from './pages/Login';
 import Profile from './pages/Profile';
@@ -249,6 +250,8 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
+      
     </>
+    
   );
 }

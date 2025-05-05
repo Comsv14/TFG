@@ -40,6 +40,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('lost-pets', LostPetController::class)->except(['update']);
     Route::put('lost-pets/{lost_pet}', [LostPetController::class, 'update']);
     Route::post('lost-pets/{lost_pet}/sightings', [LostPetController::class, 'reportSighting']);
+    /* NUEVA ==> */ Route::get('lost-pets/{lost_pet}', [LostPetController::class, 'show']);
+    
 
     // Reportes de pérdida
     Route::get('lost-reports',                       [LostReportController::class, 'index']);

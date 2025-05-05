@@ -17,19 +17,22 @@ class LostPet extends Model
         'user_id',
     ];
 
-    /**  ← NUEVO: sin created_at / updated_at  */
+    /** Esta tabla no tiene created_at / updated_at */
     public $timestamps = false;
 
     protected $casts = [
         'posted_at' => 'datetime',
     ];
 
-    /*------------------------------------------
-    | Relaciones
-    |-----------------------------------------*/
+    /* ---------- Relaciones ---------- */
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function pet()
+    {
+        return $this->belongsTo(Pet::class);
     }
 
     public function sightings()
@@ -37,9 +40,7 @@ class LostPet extends Model
         return $this->hasMany(Sighting::class);
     }
 
-    /*------------------------------------------
-    | Accesores
-    |-----------------------------------------*/
+    /* ---------- Accesor ---------- */
     public function getPhotoUrlAttribute()
     {
         return $this->photo ? asset('storage/'.$this->photo) : null;
