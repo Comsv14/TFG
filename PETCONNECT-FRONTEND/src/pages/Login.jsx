@@ -1,35 +1,30 @@
+// src/pages/Login.jsx
+
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 
 export default function Login({ addToast, onLogin }) {
   const [form, setForm] = useState({ email: '', password: '' });
-  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleChange = e => {
-    const { name, value } = e.target;
-    setForm(f => ({ ...f, [name]: value }));
-  };
+  function handleChange(e) {
+    setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+  }
 
-  const handleSubmit = async e => {
+  async function handleSubmit(e) {
     e.preventDefault();
-    setLoading(true);
     try {
       const { data } = await api.post('/api/login', form);
+      // guardamos el token y disparamos el cambio de estado en App.jsx
+      localStorage.setItem('token', data.token);
       onLogin(data.token);
-      addToast('Inicio de sesión exitoso', 'success');
-      navigate('/pets', { replace: true });
+      addToast('Has iniciado sesión con éxito', 'success');
+      navigate('/pets');
     } catch (err) {
-      console.error(err);
-      addToast(
-        err.response?.data?.message || 'Credenciales incorrectas',
-        'error'
-      );
-    } finally {
-      setLoading(false);
+      addToast('Credenciales inválidas', 'error');
     }
-  };
+  }
 
   return (
     <div className="page-auth">
@@ -53,16 +48,10 @@ export default function Login({ addToast, onLogin }) {
           onChange={handleChange}
           required
         />
-        <button className="btn btn-primary w-100" disabled={loading}>
-          {loading ? 'Ingresando...' : 'Ingresar'}
+        <button className="btn btn-primary w-100" type="submit">
+          Acceder
         </button>
       </form>
-      <p className="mt-3 text-center">
-        ¿No tienes cuenta?{' '}
-        <Link to="/register" className="btn btn-link p-0">
-          Regístrate
-        </Link>
-      </p>
     </div>
   );
 }

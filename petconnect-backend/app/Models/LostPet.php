@@ -1,34 +1,35 @@
 <?php
-// app/Models/LostPet.php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 
 class LostPet extends Model
 {
-    // No timestamps automáticos: usas `posted_at`
-    public $timestamps = false;
-
     protected $fillable = [
-        'pet_name',
-        'description',
-        'photo',
-        'last_seen_location',
-        'last_seen_latitude',
-        'last_seen_longitude',
-        'found',
+      'pet_name','description','photo',
+      'last_seen_location',
+      'last_seen_latitude','last_seen_longitude',
+      'user_id','found','posted_at'
     ];
 
-    public function user(): BelongsTo
+    // timestamps true para created_at/updated_at
+    public $timestamps = true;
+
+    public function getPhotoUrlAttribute()
+    {
+        return $this->photo
+            ? url(Storage::url($this->photo))
+            : null;
+    }
+
+    public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    public function sightings(): HasMany
+    public function sightings()
     {
-        return $this->hasMany(LostPetSighting::class);
+        return $this->hasMany(LostSighting::class);
     }
 }

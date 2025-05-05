@@ -33,7 +33,7 @@ export default function LostPets({ addToast, user }) {
   const [lostPets, setLostPets] = useState([]);
   const [expandedId, setExpandedId] = useState(null);
 
-  // filter state now includes province
+  // filter state
   const [filters, setFilters] = useState({
     name: '',
     province: '',
@@ -44,7 +44,7 @@ export default function LostPets({ addToast, user }) {
     recentFirst: true,
   });
 
-  // fetch once
+  // fetch data
   const fetchLostPets = useCallback(async () => {
     try {
       const { data } = await api.get('/api/lost-pets');
@@ -58,7 +58,7 @@ export default function LostPets({ addToast, user }) {
     fetchLostPets();
   }, [fetchLostPets]);
 
-  // unique provinces
+  // extract unique provinces
   const provinces = useMemo(
     () =>
       Array.from(
@@ -74,16 +74,16 @@ export default function LostPets({ addToast, user }) {
   // apply filters + sort
   const filtered = useMemo(() => {
     let arr = lostPets.filter((p) => {
-      // name
+      // by name
       if (
         filters.name &&
         !p.pet_name.toLowerCase().includes(filters.name.toLowerCase())
       )
         return false;
-      // province
+      // by province
       if (filters.province && p.last_seen_location !== filters.province)
         return false;
-      // date range
+      // by date
       const dt = new Date(p.posted_at);
       if (filters.fromDate && dt < new Date(filters.fromDate)) return false;
       if (filters.toDate && dt > new Date(filters.toDate)) return false;
@@ -99,16 +99,18 @@ export default function LostPets({ addToast, user }) {
       }
       return true;
     });
+
     // sort by posted_at
     arr.sort((a, b) => {
       const da = new Date(a.posted_at),
         db = new Date(b.posted_at);
       return filters.recentFirst ? db - da : da - db;
     });
+
     return arr;
   }, [lostPets, filters, user]);
 
-  // toggle expand/collapse
+  // toggle expand
   function toggleDetails(id) {
     setExpandedId(expandedId === id ? null : id);
   }
@@ -117,7 +119,7 @@ export default function LostPets({ addToast, user }) {
     <>
       <h1 className="mb-4">Mascotas Perdidas</h1>
 
-      {/* — FILTERS PANEL — */}
+      {/* — PANEL DE FILTROS — */}
       <div className="card mb-4 p-3">
         <div className="row g-2">
           <div className="col-md">
@@ -203,7 +205,7 @@ export default function LostPets({ addToast, user }) {
         </div>
       </div>
 
-      {/* — CARDS GRID — */}
+      {/* — GRID DE TARJETAS — */}
       <div className="row">
         {filtered.length === 0 && (
           <div className="col-12 text-center text-muted my-5">
@@ -244,7 +246,7 @@ export default function LostPets({ addToast, user }) {
 
                 {expandedId === p.id && (
                   <div className="mt-3">
-                    {/* static map */}
+                    {/* Mapa estático */}
                     {p.last_seen_latitude != null &&
                       p.last_seen_longitude != null && (
                         <div style={{ height: '200px', width: '100%' }}>

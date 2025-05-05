@@ -5,18 +5,30 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    // Registro
+    /**
+     * GET  /sanctum/csrf-cookie
+     */
+    public function csrfCookie(Request $request)
+    {
+        // Llamada desde el frontend para inicializar la cookie de CSRF
+        return response()->json(['csrf' => true]);
+    }
+
+    /**
+     * POST /api/register
+     */
     public function register(Request $request)
     {
         $data = $request->validate([
-            'name'     => 'required|string|max:100',
-            'email'    => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6|confirmed',
+            'name'                  => 'required|string|max:100',
+            'email'                 => 'required|email|unique:users,email',
+            'password'              => 'required|string|min:6|confirmed',
         ]);
 
         $user = User::create([
@@ -25,43 +37,54 @@ class AuthController extends Controller
             'password' => Hash::make($data['password']),
         ]);
 
-        $token = $user->createToken('web')->plainTextToken;
+        // Creamos un token
+        $plainToken = $user->createToken('api-token')->plainTextToken;
 
-        return response()->json(compact('user','token'), 201);
+        return response()->json([
+            'user'  => $user,
+            'token' => $plainToken,
+        ], 201);
     }
 
-    // Login
+    /**
+     * POST /api/login
+     */
     public function login(Request $request)
     {
-        $data = $request->validate([
+        $credentials = $request->validate([
             'email'    => 'required|email',
             'password' => 'required|string',
         ]);
 
-        $user = User::where('email', $data['email'])->first();
-
-        if (! $user || ! Hash::check($data['password'], $user->password)) {
+        // Intentamos autenticar
+        if (! Auth::attempt($credentials)) {
             throw ValidationException::withMessages([
-                'email' => ['Credenciales incorrectas.'],
+                'email' => ['Credenciales inválidas.'],
             ]);
         }
 
-        // Elimina tokens previos opcionalmente:
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+
+        // (Opcional) Eliminar tokens previos
         $user->tokens()->delete();
 
-        $token = $user->createToken('web')->plainTextToken;
+        $plainToken = $user->createToken('api-token')->plainTextToken;
 
-        return response()->json(compact('user','token'));
+        return response()->json([
+            'user'  => $user,
+            'token' => $plainToken,
+        ], 200);
     }
 
-    // Logout
+    /**
+     * POST /api/logout
+     */
     public function logout(Request $request)
     {
+        // Borra todos los tokens del usuario actual
         $request->user()->tokens()->delete();
-        return response()->json(['message' => 'Logged out']);
+
+        return response()->json(['message' => 'Sesión cerrada'], 200);
     }
-    public function csrfCookie(Request $request)
-{
-    return response()->json(['csrf' => true]);
-}
 }
