@@ -55,11 +55,10 @@ class AuthController extends Controller
 
         $user = User::where('email', $data['email'])->first();
 
-        if (! $user || ! Hash::check($data['password'], $user->password)) {
-            throw ValidationException::withMessages([
-                'email' => ['Credenciales incorrectas.'],
-            ]);
-        }
+        $user = User::where('email', $data['email'])->first();
+    if (! $user || ! Hash::check($data['password'], $user->password)) {
+        return response()->json(['message'=>'Credenciales inválidas'], 401);
+    }
 
         // (Opcional) elimina tokens previos
         $user->tokens()->delete();
