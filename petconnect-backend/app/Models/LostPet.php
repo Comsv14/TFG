@@ -1,6 +1,4 @@
 <?php
-// petconnect-backend/app/Models/LostPet.php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -23,13 +21,11 @@ class LostPet extends Model
         'photo',
     ];
 
-    // Quién reportó la pérdida
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    // Avistamientos
     public function sightings()
     {
         return $this->hasMany(Sighting::class);

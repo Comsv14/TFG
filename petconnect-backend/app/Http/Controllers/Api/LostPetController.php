@@ -16,8 +16,8 @@ class LostPetController extends Controller
     public function index(Request $request)
     {
         $pets = LostPet::with(['user','sightings.user'])
-            // Ordenamos por created_at (no existe posted_at)
-            ->orderBy('created_at','desc')
+            // Cambiado: usamos posted_at en lugar de created_at
+            ->orderBy('posted_at','desc')
             ->get()
             ->map(function (LostPet $pet) {
                 $pet->photo = $pet->photo
@@ -44,18 +44,18 @@ class LostPetController extends Controller
         ]);
 
         if ($request->hasFile('photo')) {
-            $path = $request->file('photo')
-                            ->store('lost-pets','public');
-            $data['photo'] = $path;
+            $data['photo'] = $request->file('photo')
+                                   ->store('lost-pets','public');
         }
 
+        // Relación lostPets() en User.php
         $lost = $request->user()->lostPets()->create($data);
 
         $lost->photo = $lost->photo
             ? url(Storage::url($lost->photo))
             : null;
 
-        return response()->json($lost,201);
+        return response()->json($lost, 201);
     }
 
     /**
@@ -76,9 +76,8 @@ class LostPetController extends Controller
             if ($lost_pet->photo) {
                 Storage::disk('public')->delete($lost_pet->photo);
             }
-            $path = $request->file('photo')
-                            ->store('lost-pets','public');
-            $data['photo'] = $path;
+            $data['photo'] = $request->file('photo')
+                                   ->store('lost-pets','public');
         }
 
         $lost_pet->update($data);
@@ -99,7 +98,8 @@ class LostPetController extends Controller
             Storage::disk('public')->delete($lost_pet->photo);
         }
         $lost_pet->delete();
-        return response()->json(null,204);
+
+        return response()->json(null, 204);
     }
 
     /**
@@ -116,22 +116,19 @@ class LostPetController extends Controller
         ]);
 
         if ($request->hasFile('photo')) {
-            $path = $request->file('photo')
-                            ->store('lost-pets/sightings','public');
-            $data['photo'] = $path;
+            $data['photo'] = $request->file('photo')
+                                   ->store('lost-pets/sightings','public');
         }
 
-        $sighting = $lost_pet
-            ->sightings()
-            ->create(array_merge($data,[
-                'user_id'=>$request->user()->id,
-            ]));
+        $sighting = $lost_pet->sightings()->create(array_merge($data, [
+            'user_id' => $request->user()->id,
+        ]));
 
         $sighting->load('user');
         $sighting->photo = isset($data['photo'])
             ? url(Storage::url($data['photo']))
             : null;
 
-        return response()->json($sighting,201);
+        return response()->json($sighting, 201);
     }
 }

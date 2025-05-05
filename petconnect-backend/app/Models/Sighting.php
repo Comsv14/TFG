@@ -10,11 +10,16 @@ class Sighting extends Model
 {
     use HasFactory;
 
-    // ↓ Aquí falta indicarle la tabla correcta:
     protected $table = 'lost_pet_sightings';
 
     protected $fillable = [
-        'lost_pet_id','user_id','location','latitude','longitude','comment','photo',
+        'lost_pet_id',
+        'user_id',
+        'location',
+        'latitude',
+        'longitude',
+        'comment',
+        'photo',
     ];
 
     public function lostPet()

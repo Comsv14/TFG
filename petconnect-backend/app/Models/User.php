@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Models;
-
+use App\Models\LostPet;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Notifications\Notifiable;
@@ -29,8 +29,12 @@ class User extends Authenticatable
             ? url(\Illuminate\Support\Facades\Storage::url($this->avatar))
             : null;
     }
+       /**
+     * Relación 1:N con LostPet
+     */
     public function lostPets()
     {
         return $this->hasMany(LostPet::class);
     }
+
 }
