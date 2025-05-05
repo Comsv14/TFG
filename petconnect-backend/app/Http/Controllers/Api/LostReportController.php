@@ -1,5 +1,4 @@
 <?php
-// petconnect-backend/app/Http/Controllers/Api/LostReportController.php
 
 namespace App\Http\Controllers\Api;
 
@@ -10,23 +9,25 @@ use Illuminate\Support\Facades\Storage;
 
 class LostReportController extends Controller
 {
-    // Listar todos, con filtros opcionales (?type=lost|found, ?resolved=0|1)
+    // GET /api/lost-reports?type=lost|found
     public function index(Request $request)
     {
-        $q = LostReport::with(['user','pet'])
-            ->orderBy('happened_at','desc');
+        $type = $request->query('type', 'lost');
+        $reports = LostReport::with(['user','pet'])
+            ->where('type', $type)
+            ->orderBy('happened_at','desc')
+            ->get()
+            ->map(function($r) {
+                if ($r->photo) {
+                    $r->photo = url(Storage::url($r->photo));
+                }
+                return $r;
+            });
 
-        if ($t = $request->query('type')) {
-            $q->where('type',$t);
-        }
-        if (!is_null($r = $request->query('resolved'))) {
-            $q->where('resolved',(bool)$r);
-        }
-
-        return response()->json($q->get());
+        return response()->json($reports);
     }
 
-    // Nuevo reporte (lost o found)
+    // POST /api/lost-reports
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -39,34 +40,24 @@ class LostReportController extends Controller
             'photo'        => 'nullable|image|max:2048',
         ]);
 
-        // foto
         if ($request->hasFile('photo')) {
             $data['photo'] = $request->file('photo')->store('lost-reports','public');
         }
 
         $report = $request->user()->lostReports()->create($data);
+        $report->load('user','pet');
 
-        return response()->json($report->load('user','pet'),201);
+        if ($report->photo) {
+            $report->photo = url(Storage::url($report->photo));
+        }
+
+        return response()->json($report, 201);
     }
 
-    // Marcar encontrado (para los “lost”) o reabrir
-    public function toggleResolved(LostReport $lost_report)
+    // POST /api/lost-reports/{id}/toggle-resolved
+    public function toggleResolved(LostReport $id)
     {
-        if ($lost_report->type!=='lost') {
-            return response()->json(['error'=>'Sólo lost reports'],422);
-        }
-        $lost_report->resolved = !$lost_report->resolved;
-        $lost_report->save();
-        return response()->json($lost_report);
-    }
-
-    // Eliminar un reporte
-    public function destroy(LostReport $lost_report)
-    {
-        if ($lost_report->photo) {
-            Storage::disk('public')->delete($lost_report->photo);
-        }
-        $lost_report->delete();
-        return response()->json(null,204);
+        $id->update(['resolved' => ! $id->resolved]);
+        return response()->json($id);
     }
 }

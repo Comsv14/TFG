@@ -1,21 +1,24 @@
 <?php
-// petconnect-backend/app/Models/LostReport.php
 
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\User;
-use App\Models\Pet;
 
 class LostReport extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'user_id','pet_id','type','comment',
-        'happened_at','latitude','longitude',
-        'photo','resolved',
+        'user_id',
+        'pet_id',
+        'type',
+        'comment',
+        'happened_at',
+        'latitude',
+        'longitude',
+        'photo',
+        'resolved',
     ];
 
     public function user()

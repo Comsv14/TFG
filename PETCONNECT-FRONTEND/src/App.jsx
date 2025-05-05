@@ -13,7 +13,7 @@ import api from './api/axios';
 import Toast from './components/Toast';
 import Pets from './pages/Pets';
 import Activities from './pages/Activities';
-import LostPets from './pages/LostPets';        // ← Importa LostPets
+import LostPets from './pages/LostPets';
 import LostReports from './pages/LostReports';
 import Register from './pages/Register';
 import Login from './pages/Login';
@@ -26,6 +26,7 @@ export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Cuando cambia el token, lo guardamos y cargamos el perfil
   useEffect(() => {
     if (token) {
       localStorage.setItem('token', token);
@@ -43,6 +44,7 @@ export default function App() {
     }
   }, [token]);
 
+  // Función para mostrar toasts
   const addToast = useCallback((message, type = 'info') => {
     const id = Date.now();
     const bg =
@@ -54,10 +56,12 @@ export default function App() {
     setToasts((ts) => [...ts, { id, message, bg }]);
   }, []);
 
+  // Quitar toast
   const removeToast = useCallback((id) => {
     setToasts((ts) => ts.filter((t) => t.id !== id));
   }, []);
 
+  // Logout
   const handleLogout = async () => {
     try {
       await api.post('/api/logout');
@@ -67,6 +71,7 @@ export default function App() {
     navigate('/login', { replace: true });
   };
 
+  // Componentes para rutas protegidas / guests
   const RequireAuth = ({ children }) =>
     token ? children : <Navigate to="/login" replace state={{ from: location }} />;
   const RequireGuest = ({ children }) =>
@@ -166,6 +171,7 @@ export default function App() {
         </nav>
       )}
 
+      {/* Contenedor de toasts */}
       <div
         className="toast-container"
         style={{ position: 'fixed', top: '1rem', right: '1rem', zIndex: 1080 }}
@@ -175,6 +181,7 @@ export default function App() {
         ))}
       </div>
 
+      {/* Rutas */}
       <div className="container mt-4">
         <Routes>
           <Route

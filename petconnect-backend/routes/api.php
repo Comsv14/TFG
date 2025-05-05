@@ -40,4 +40,7 @@ Route::middleware('auth:sanctum')->group(function () {
          ->only(['index','store','destroy']);
     Route::post('lost-reports/{lost_report}/toggle-resolved',
                [LostReportController::class,'toggleResolved']);
+    Route::get('lost-reports',          [LostReportController::class,'index']);
+    Route::post('lost-reports',         [LostReportController::class,'store']);
+    Route::post('lost-reports/{id}/toggle-resolved', [LostReportController::class,'toggleResolved']);
 });
