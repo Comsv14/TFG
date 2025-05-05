@@ -10,9 +10,7 @@ import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import L from 'leaflet';
 import api from '../api/axios';
 
-/* -------------------------------------------------
-   Leaflet – icono por defecto (CDN)
--------------------------------------------------- */
+/* -------------- Leaflet default icon -------------- */
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
@@ -23,9 +21,7 @@ L.Icon.Default.mergeOptions({
     'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.3/images/marker-shadow.png',
 });
 
-/* -------------------------------------------------
-   Utilidad: distancia Haversine (km)
--------------------------------------------------- */
+/* -------------- Haversine util (km) -------------- */
 function distanceKm(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -38,14 +34,12 @@ function distanceKm(lat1, lon1, lat2, lon2) {
   return 2 * R * Math.asin(Math.sqrt(a));
 }
 
-/* -------------------------------------------------
-   Componente
--------------------------------------------------- */
+/* -------------- Component -------------- */
 export default function LostPets({ addToast, user }) {
   const [lostPets, setLostPets] = useState([]);
   const [expandedId, setExpandedId] = useState(null);
 
-  /* ------------------ Filtros ------------------ */
+  /* ---------- filters ---------- */
   const [filters, setFilters] = useState({
     name: '',
     province: '',
@@ -56,50 +50,47 @@ export default function LostPets({ addToast, user }) {
     recentFirst: true,
   });
 
-  /* ------------------ Fetch ------------------ */
+  /* ---------- fetch ---------- */
   const fetchLostPets = useCallback(async () => {
     try {
       const res = await api.get('/api/lost-pets');
-      // la API devuelve LostPetResource collection
       setLostPets(res.data.data ?? res.data);
     } catch {
       addToast('Error cargando pérdidas', 'error');
     }
-  }, [addToast]);
+  }, []);               // ← sin addToast aquí
 
   useEffect(() => {
-    fetchLostPets();
-  }, [fetchLostPets]);
+    fetchLostPets();    // ← solo una vez
+  }, []);               // ← array vacío
 
-  /* ---------- Provincias únicas ---------- */
+  /* ---------- provincias únicas ---------- */
   const provinces = useMemo(
     () =>
       Array.from(
         new Set(
           lostPets
-            .map((p) => p.location)
-            .filter((loc) => loc && loc.trim() !== '')
+            .map(p => p.location)
+            .filter(loc => loc && loc.trim() !== '')
         )
       ),
     [lostPets]
   );
 
-  /* ---------- Aplicar filtros + sort ---------- */
+  /* ---------- aplicar filtros + sort ---------- */
   const filtered = useMemo(() => {
-    let arr = lostPets.filter((p) => {
-      // por nombre
+    let arr = lostPets.filter(p => {
       if (
         filters.name &&
         !p.pet.name.toLowerCase().includes(filters.name.toLowerCase())
       )
         return false;
-      // por provincia
       if (filters.province && p.location !== filters.province) return false;
-      // por fecha
+
       const dt = new Date(p.posted_at);
       if (filters.fromDate && dt < new Date(filters.fromDate)) return false;
       if (filters.toDate && dt > new Date(filters.toDate)) return false;
-      // cerca de mí
+
       if (filters.nearMe && user?.latitude && user?.longitude) {
         const km = distanceKm(
           user.latitude,
@@ -121,16 +112,15 @@ export default function LostPets({ addToast, user }) {
     return arr;
   }, [lostPets, filters, user]);
 
-  /* ---------- Toggle detalles ---------- */
-  const toggleDetails = (id) =>
+  const toggleDetails = id =>
     setExpandedId(expandedId === id ? null : id);
 
-  /* ---------- Render ---------- */
+  /* ---------- render ---------- */
   return (
     <Fragment>
       <h1 className="mb-4">Mascotas Perdidas</h1>
 
-      {/* -------- PANEL DE FILTROS -------- */}
+      {/* -------- panel de filtros -------- */}
       <div className="card mb-4 p-3">
         <div className="row g-2">
           <div className="col-md">
@@ -139,8 +129,8 @@ export default function LostPets({ addToast, user }) {
               className="form-control"
               placeholder="Buscar por nombre..."
               value={filters.name}
-              onChange={(e) =>
-                setFilters((f) => ({ ...f, name: e.target.value }))
+              onChange={e =>
+                setFilters(f => ({ ...f, name: e.target.value }))
               }
             />
           </div>
@@ -148,12 +138,12 @@ export default function LostPets({ addToast, user }) {
             <select
               className="form-select"
               value={filters.province}
-              onChange={(e) =>
-                setFilters((f) => ({ ...f, province: e.target.value }))
+              onChange={e =>
+                setFilters(f => ({ ...f, province: e.target.value }))
               }
             >
               <option value="">Todas las provincias</option>
-              {provinces.map((pr) => (
+              {provinces.map(pr => (
                 <option key={pr} value={pr}>
                   {pr}
                 </option>
@@ -165,8 +155,8 @@ export default function LostPets({ addToast, user }) {
               type="date"
               className="form-control"
               value={filters.fromDate}
-              onChange={(e) =>
-                setFilters((f) => ({ ...f, fromDate: e.target.value }))
+              onChange={e =>
+                setFilters(f => ({ ...f, fromDate: e.target.value }))
               }
             />
           </div>
@@ -175,8 +165,8 @@ export default function LostPets({ addToast, user }) {
               type="date"
               className="form-control"
               value={filters.toDate}
-              onChange={(e) =>
-                setFilters((f) => ({ ...f, toDate: e.target.value }))
+              onChange={e =>
+                setFilters(f => ({ ...f, toDate: e.target.value }))
               }
             />
           </div>
@@ -187,8 +177,8 @@ export default function LostPets({ addToast, user }) {
                 type="checkbox"
                 className="form-check-input"
                 checked={filters.nearMe}
-                onChange={(e) =>
-                  setFilters((f) => ({ ...f, nearMe: e.target.checked }))
+                onChange={e =>
+                  setFilters(f => ({ ...f, nearMe: e.target.checked }))
                 }
               />
               <label htmlFor="nearMe" className="form-check-label">
@@ -201,8 +191,8 @@ export default function LostPets({ addToast, user }) {
                 type="checkbox"
                 className="form-check-input"
                 checked={filters.recentFirst}
-                onChange={(e) =>
-                  setFilters((f) => ({
+                onChange={e =>
+                  setFilters(f => ({
                     ...f,
                     recentFirst: e.target.checked,
                   }))
@@ -216,7 +206,7 @@ export default function LostPets({ addToast, user }) {
         </div>
       </div>
 
-      {/* -------- GRID DE TARJETAS -------- */}
+      {/* -------- grid de tarjetas -------- */}
       <div className="row">
         {filtered.length === 0 && (
           <div className="col-12 text-center text-muted my-5">
@@ -224,23 +214,22 @@ export default function LostPets({ addToast, user }) {
           </div>
         )}
 
-        {filtered.map((p) => (
+        {filtered.map(p => (
           <div key={p.id} className="col-md-6 col-lg-4 mb-4">
             <div className="card h-100 shadow-sm">
-              {/* foto del reporte o, si no, mapa estático */}
               {p.photo ? (
                 <img
                   src={p.photo}
                   alt={p.pet.name}
                   className="card-img-top"
-                  style={{ height: '200px', objectFit: 'cover' }}
+                  style={{ height: 200, objectFit: 'cover' }}
                 />
               ) : (
                 <img
                   src={`https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s+ff0000(${p.lng},${p.lat})/${p.lng},${p.lat},13/300x200?access_token=pk.eyJ1IjoiZGVtb3VzZXIiLCJhIjoiY2s4b2E0cHlvMDMxZDNqcGd2OXc1MGxkMSJ9.48tRArrVJPHWgIqi6qVrbA`}
                   alt="map"
                   className="card-img-top"
-                  style={{ height: '200px', objectFit: 'cover' }}
+                  style={{ height: 200, objectFit: 'cover' }}
                 />
               )}
 
@@ -253,7 +242,8 @@ export default function LostPets({ addToast, user }) {
                   <strong>Ubicación:</strong> {p.location ?? '—'}
                 </p>
                 <p className="text-muted mb-3">
-                  Reportado: {new Date(p.posted_at).toLocaleDateString()}
+                  Reportado:{' '}
+                  {new Date(p.posted_at).toLocaleDateString()}
                 </p>
 
                 <button
@@ -263,11 +253,10 @@ export default function LostPets({ addToast, user }) {
                   {expandedId === p.id ? 'Ocultar detalles' : 'Ver detalles'}
                 </button>
 
-                {/* Detalles expandibles */}
                 {expandedId === p.id && (
                   <div className="mt-3">
                     {p.lat != null && p.lng != null && (
-                      <div style={{ height: '200px', width: '100%' }}>
+                      <div style={{ height: 200, width: '100%' }}>
                         <MapContainer
                           center={[p.lat, p.lng]}
                           zoom={13}

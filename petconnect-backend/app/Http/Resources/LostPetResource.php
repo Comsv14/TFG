@@ -16,17 +16,17 @@ class LostPetResource extends JsonResource
             'lng'       => $this->last_seen_longitude,
             'posted_at' => optional($this->posted_at)->format('Y-m-d'),
             'pet' => [
-                'id'    => $this->pet->id,
-                'name'  => $this->pet->name,
-                'breed' => $this->pet->breed,
-                'age'   => $this->pet->age,
-                'photo' => $this->pet->image
+                'id'    => $this->pet?->id ?? 0,
+                'name'  => $this->pet?->name ?? '(sin nombre)',
+                'breed' => $this->pet?->breed ?? '—',
+                'age'   => $this->pet?->age ?? '—',
+                'photo' => $this->pet?->image
                     ? asset('storage/'.$this->pet->image)
                     : null,
             ],
             'photo' => $this->photo_url,
             'user'  => $this->user,
-            'sightings' => $this->sightings,   // se cargan en el show()
+            'sightings' => $this->whenLoaded('sightings'),
         ];
     }
 }

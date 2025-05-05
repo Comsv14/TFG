@@ -1,13 +1,11 @@
-// src/pages/LostReports.jsx
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from '../api/axios';
 import MapPicker from '../components/MapPicker';
 
 export default function LostReports({ addToast, user }) {
+  /* --------------- state --------------- */
   const [lostReports, setLostReports] = useState([]);
   const [myPets,      setMyPets]      = useState([]);
-  const [mode,        setMode]        = useState('lost');
   const [form,        setForm]        = useState({
     pet_id: '',
     comment: '',
@@ -17,77 +15,101 @@ export default function LostReports({ addToast, user }) {
     photo: null,
   });
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const [petsRes, reportsRes] = await Promise.all([
-          api.get('/api/pets'),
-          api.get('/api/lost-pets')
-        ]);
-        setMyPets(petsRes.data);
-        setLostReports(reportsRes.data);
-      } catch (e) {
-        addToast('Error cargando datos', 'error');
-      }
-    })();
+  /* --------------- fetch --------------- */
+  const fetchData = useCallback(async () => {
+    try {
+      const [petsRes, reportsRes] = await Promise.all([
+        api.get('/api/pets'),
+        api.get('/api/lost-pets'),
+      ]);
+
+      setMyPets(
+        Array.isArray(petsRes.data) ? petsRes.data : petsRes.data?.data || []
+      );
+
+      const arr =
+        Array.isArray(reportsRes.data)
+          ? reportsRes.data
+          : Array.isArray(reportsRes.data?.data)
+          ? reportsRes.data.data
+          : [];
+      setLostReports(arr);
+    } catch {
+      addToast('Error cargando datos', 'error');
+    }
   }, [addToast]);
 
-  function handleChange(e) {
+  useEffect(() => {
+    fetchData();
+  }, []);                     // ← solo al montar
+
+  /* --------------- handlers --------------- */
+  const handleChange = (e) => {
     const { name, value, files } = e.target;
-    if (name === 'photo') {
-      setForm(f => ({ ...f, photo: files[0] }));
-    } else {
-      setForm(f => ({ ...f, [name]: value }));
-    }
-  }
+    setForm((f) => ({
+      ...f,
+      [name]: name === 'photo' ? files[0] : value,
+    }));
+  };
 
-  function handleMap(lat, lng) {
-    setForm(f => ({ ...f, latitude: lat, longitude: lng }));
-  }
+  const handleMap = (lat, lng) => {
+    setForm((f) => ({ ...f, latitude: lat, longitude: lng }));
+  };
 
-  async function handleSubmit(e) {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const fd = new FormData();
-      if (mode === 'lost') {
-        fd.append('pet_name', form.pet_id); // o `pet_id` si cambias API
-        fd.append('comment', form.comment);
-        fd.append('happened_at', form.happened_at);
-        fd.append('longitude', form.longitude);
-        fd.append('latitude',  form.latitude);
-        if (form.photo) fd.append('photo', form.photo);
-      } else {
-        // …
-      }
+      fd.append('pet_name', form.pet_id);          // usar pet_id si tu API lo requiere
+      fd.append('comment',  form.comment);
+      fd.append('happened_at', form.happened_at);
+      fd.append('latitude',  form.latitude);
+      fd.append('longitude', form.longitude);
+      if (form.photo) fd.append('photo', form.photo);
 
       const res = await api.post('/api/lost-pets', fd, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      setLostReports([res.data, ...lostReports]);
+      /* Normaliza uno solo y lo añade al inicio */
+      const newReport = Array.isArray(res.data)
+        ? res.data[0]
+        : res.data?.data || res.data;
+      setLostReports((r) => [newReport, ...r]);
+
       addToast('Enviado con éxito', 'success');
       setForm({
-        pet_id: '', comment: '', happened_at: '',
-        latitude: null, longitude: null, photo: null
+        pet_id: '',
+        comment: '',
+        happened_at: '',
+        latitude: null,
+        longitude: null,
+        photo: null,
       });
     } catch {
       addToast('Error al enviar', 'error');
     }
-  }
+  };
 
+  /* --------------- render --------------- */
   return (
     <div>
       <h1>Reportar Mascota Perdida</h1>
+
+      {/* ---------- formulario ---------- */}
       <form onSubmit={handleSubmit} className="card p-4 mb-5">
         <select
           name="pet_id"
           className="form-select mb-3"
-          required value={form.pet_id}
+          required
+          value={form.pet_id}
           onChange={handleChange}
         >
           <option value="">Selecciona tu mascota</option>
-          {myPets.map(p => (
-            <option key={p.id} value={p.id}>{p.name}</option>
+          {myPets.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
           ))}
         </select>
 
@@ -130,21 +152,28 @@ export default function LostReports({ addToast, user }) {
         <button className="btn btn-danger">Reportar Pérdida</button>
       </form>
 
+      {/* ---------- listado ---------- */}
       <h2>Listado de Pérdidas</h2>
-      {lostReports.map(r => (
+      {lostReports.length === 0 && (
+        <p className="text-muted">No hay reportes registrados.</p>
+      )}
+
+      {lostReports.map((r) => (
         <div key={r.id} className="card mb-4">
           {r.photo && (
             <img
               src={r.photo}
               className="card-img-top"
-              style={{ height:'200px', objectFit:'cover' }}
+              style={{ height: 200, objectFit: 'cover' }}
+              alt="reporte"
             />
           )}
           <div className="card-body">
             <h5 className="card-title">{r.pet_name}</h5>
             <p className="card-text">{r.comment}</p>
             <p className="text-muted">
-              {new Date(r.posted_at).toLocaleString()} — [{r.last_seen_latitude?.toFixed(5)},{r.last_seen_longitude?.toFixed(5)}]
+              {new Date(r.posted_at).toLocaleString()} — [
+              {r.lat?.toFixed(5)},{r.lng?.toFixed(5)}]
             </p>
           </div>
         </div>
