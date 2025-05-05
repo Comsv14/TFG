@@ -1,164 +1,160 @@
+// src/pages/LostPets.jsx
+
 import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
-import LostPetCard from '../components/LostPetCard';
 import MapPicker from '../components/MapPicker';
 
-export default function LostPets({ addToast }) {
-  const [lostList, setLostList] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [newForm, setNewForm] = useState({
-    pet_name: '',
-    description: '',
-    last_seen_latitude: null,
-    last_seen_longitude: null,
-    photo: null,
-  });
-  const [sightForm, setSightForm] = useState({});
+export default function LostPets({ addToast, user }) {
+  const [lostPets, setLostPets] = useState([]);
+  const [forms, setForms] = useState({}); // { [petId]: { comment, latitude, longitude, photo } }
 
-  // Fetch initial list
+  // Load all lost pets with their sightings
   useEffect(() => {
-    (async () => {
-      try {
-        const { data } = await api.get('/api/lost-pets');
-        setLostList(data);
-      } catch {
-        addToast('Error al cargar mascotas perdidas', 'error');
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [addToast]);
+    fetchLostPets();
+  }, []);
 
-  // Handlers for "nuevo reporte"
-  const handleLostChange = e => {
-    const { name, value, files } = e.target;
-    setNewForm(f => ({
-      ...f,
-      [name]: name === 'photo' ? files[0] : value,
-    }));
-  };
-  const handleAddLostPet = async e => {
-    e.preventDefault();
+  const fetchLostPets = async () => {
     try {
-      const fd = new FormData();
-      Object.entries(newForm).forEach(([k, v]) => {
-        if (v != null) fd.append(k, v);
-      });
-      const { data } = await api.post('/api/lost-pets', fd, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      setLostList(l => [data, ...l]);
-      addToast('Mascota perdida reportada', 'success');
-      setNewForm({
-        pet_name: '',
-        description: '',
-        last_seen_latitude: null,
-        last_seen_longitude: null,
-        photo: null,
-      });
+      const { data } = await api.get('/api/lost-pets');
+      setLostPets(data);
     } catch {
-      addToast('Error al reportar mascota perdida', 'error');
+      addToast('Error al cargar mascotas perdidas', 'error');
     }
   };
 
-  // Handlers for sighting form (shared across cards)
-  const handleSightChange = e => {
-    const { name, value, files } = e.target;
-    setSightForm(f => ({
+  // Handle form field changes per pet
+  const handleFormChange = (petId, field, value) => {
+    setForms(f => ({
       ...f,
-      [name]: name === 'photo' ? files[0] : value,
+      [petId]: {
+        ...f[petId],
+        [field]: value
+      }
     }));
   };
 
-  // This factory returns a bound onReport function for each pet
-  const makeReportHandler = id => async e => {
-    e.preventDefault();
+  // Submit a new sighting (comment) for a given pet
+  const handleSightingSubmit = async petId => {
+    const f = forms[petId] || {};
+    const fd = new FormData();
+    if (f.comment) fd.append('comment', f.comment);
+    if (typeof f.latitude === 'number') fd.append('latitude', f.latitude);
+    if (typeof f.longitude === 'number') fd.append('longitude', f.longitude);
+    if (f.photo) fd.append('photo', f.photo);
+
     try {
-      const fd = new FormData();
-      Object.entries(sightForm).forEach(([k, v]) => {
-        if (v != null) fd.append(k, v);
+      await api.post(`/api/lost-pets/${petId}/sightings`, fd, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
-      const { data } = await api.post(
-        `/api/lost-pets/${id}/sightings`,
-        fd,
-        { headers: { 'Content-Type': 'multipart/form-data' } }
-      );
       addToast('Avistamiento reportado', 'success');
-      // Optionally, reload list to include new sighting
-      setSightForm({});
+      // clear form for this pet
+      setForms(fm => ({ ...fm, [petId]: {} }));
+      fetchLostPets();
     } catch {
       addToast('Error al reportar avistamiento', 'error');
     }
   };
 
-  if (loading) return <p>Cargando mascotas perdidas…</p>;
-
   return (
-    <div className="container mt-4">
-      <h2 className="mb-4">Mascotas Perdidas</h2>
+    <div className="row">
+      {lostPets.map(pet => {
+        const f = forms[pet.id] || {};
+        return (
+          <div key={pet.id} className="col-md-6 mb-4">
+            <div className="card h-100">
+              {pet.photo && (
+                <img
+                  src={pet.photo}
+                  className="card-img-top"
+                  alt={pet.pet_name}
+                  style={{ objectFit: 'cover', height: '250px' }}
+                />
+              )}
+              <div className="card-body d-flex flex-column">
+                <h5 className="card-title">{pet.pet_name}</h5>
+                {pet.description && <p className="card-text">{pet.description}</p>}
+                {pet.last_seen_location && (
+                  <p className="text-muted mb-1">
+                    <strong>Última ubicación:</strong> {pet.last_seen_location}
+                  </p>
+                )}
+                <p className="text-muted mb-3">
+                  <small>Reportado: {new Date(pet.posted_at).toLocaleString()}</small>
+                </p>
 
-      <div className="card mb-4 shadow-sm">
-        <div className="card-body">
-          <h5 className="card-title">Reportar mascota perdida</h5>
-          <form onSubmit={handleAddLostPet}>
-            <input
-              name="pet_name"
-              className="form-control mb-2"
-              placeholder="Nombre de la mascota"
-              value={newForm.pet_name}
-              onChange={handleLostChange}
-              required
-            />
+                <hr />
 
-            <textarea
-              name="description"
-              className="form-control mb-2"
-              placeholder="Descripción"
-              value={newForm.description}
-              onChange={handleLostChange}
-            />
+                <h6>Avistamientos</h6>
+                {pet.sightings && pet.sightings.length > 0 ? (
+                  pet.sightings.map(s => (
+                    <div key={s.id} className="mb-3">
+                      <div>
+                        <strong>{s.user.name}</strong>{' '}
+                        <small className="text-muted">
+                          ({new Date(s.created_at).toLocaleString()})
+                        </small>
+                      </div>
+                      {s.comment && <p>{s.comment}</p>}
+                      {s.photo && (
+                        <img
+                          src={s.photo}
+                          alt="avistamiento"
+                          className="img-fluid mb-2"
+                          style={{ maxHeight: '120px' }}
+                        />
+                      )}
+                      {(typeof s.latitude === 'number' && typeof s.longitude === 'number') && (
+                        <small className="text-muted">
+                          Coordenadas: {s.latitude.toFixed(5)}, {s.longitude.toFixed(5)}
+                        </small>
+                      )}
+                      <hr className="my-2" />
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-muted">Sin avistamientos todavía.</p>
+                )}
 
-            <label className="form-label">Última ubicación</label>
-            <MapPicker
-              latitude={newForm.last_seen_latitude}
-              longitude={newForm.last_seen_longitude}
-              onChange={(lat, lng) =>
-                setNewForm(f => ({
-                  ...f,
-                  last_seen_latitude: lat,
-                  last_seen_longitude: lng,
-                }))
-              }
-            />
+                <hr />
 
-            <div className="mb-3 mt-3">
-              <label className="form-label">Foto</label>
-              <input
-                type="file"
-                name="photo"
-                accept="image/*"
-                className="form-control"
-                onChange={handleLostChange}
-              />
+                <h6>Nuevo avistamiento</h6>
+                <textarea
+                  className="form-control mb-2"
+                  placeholder="Tu comentario..."
+                  value={f.comment || ''}
+                  onChange={e => handleFormChange(pet.id, 'comment', e.target.value)}
+                />
+
+                <label className="form-label mb-1">Ubicación</label>
+                <MapPicker
+                  latitude={f.latitude}
+                  longitude={f.longitude}
+                  onChange={(lat, lng) => {
+                    handleFormChange(pet.id, 'latitude', lat);
+                    handleFormChange(pet.id, 'longitude', lng);
+                  }}
+                />
+
+                <div className="mb-3 mt-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="form-control"
+                    onChange={e => handleFormChange(pet.id, 'photo', e.target.files[0])}
+                  />
+                </div>
+
+                <button
+                  className="btn btn-primary mt-auto"
+                  onClick={() => handleSightingSubmit(pet.id)}
+                >
+                  Publicar comentario
+                </button>
+              </div>
             </div>
-
-            <button className="btn btn-danger">Publicar</button>
-          </form>
-        </div>
-      </div>
-
-      <div className="row">
-        {lostList.map(pet => (
-          <div className="col-md-4 mb-3" key={pet.id}>
-            <LostPetCard
-              pet={pet}
-              sightForm={sightForm}
-              onSightChange={handleSightChange}
-              onReportSighting={makeReportHandler(pet.id)}
-            />
           </div>
-        ))}
-      </div>
+        );
+      })}
     </div>
   );
 }

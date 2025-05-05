@@ -13,7 +13,8 @@ import api from './api/axios';
 import Toast from './components/Toast';
 import Pets from './pages/Pets';
 import Activities from './pages/Activities';
-import LostReports from './pages/LostReports';  // <— asegurarse de que importa el fichero correcto
+import LostPets from './pages/LostPets';        // ← Importa LostPets
+import LostReports from './pages/LostReports';
 import Register from './pages/Register';
 import Login from './pages/Login';
 import Profile from './pages/Profile';
@@ -90,30 +91,42 @@ export default function App() {
             <div className="collapse navbar-collapse" id="navbarNav">
               <ul className="navbar-nav ms-auto align-items-center">
                 <li className="nav-item">
-                  <NavLink to="/pets" className={({ isActive }) =>
+                  <NavLink
+                    to="/pets"
+                    className={({ isActive }) =>
                       'nav-link' + (isActive ? ' active' : '')
-                    }>
+                    }
+                  >
                     Mis Mascotas
                   </NavLink>
                 </li>
                 <li className="nav-item">
-                  <NavLink to="/activities" className={({ isActive }) =>
+                  <NavLink
+                    to="/activities"
+                    className={({ isActive }) =>
                       'nav-link' + (isActive ? ' active' : '')
-                    }>
+                    }
+                  >
                     Actividades
                   </NavLink>
                 </li>
                 <li className="nav-item">
-                  <NavLink to="/lost-pets" className={({ isActive }) =>
+                  <NavLink
+                    to="/lost-pets"
+                    className={({ isActive }) =>
                       'nav-link' + (isActive ? ' active' : '')
-                    }>
+                    }
+                  >
                     Perdidas
                   </NavLink>
                 </li>
                 <li className="nav-item">
-                  <NavLink to="/lost-reports" className={({ isActive }) =>
+                  <NavLink
+                    to="/lost-reports"
+                    className={({ isActive }) =>
                       'nav-link' + (isActive ? ' active' : '')
-                    }>
+                    }
+                  >
                     Reportes Perdidas
                   </NavLink>
                 </li>
@@ -137,8 +150,14 @@ export default function App() {
                         Mi Perfil
                       </NavLink>
                     </li>
-                    <li><hr className="dropdown-divider" /></li>
-                    <li><button className="dropdown-item" onClick={handleLogout}>Logout</button></li>
+                    <li>
+                      <hr className="dropdown-divider" />
+                    </li>
+                    <li>
+                      <button className="dropdown-item" onClick={handleLogout}>
+                        Logout
+                      </button>
+                    </li>
                   </ul>
                 </li>
               </ul>
@@ -147,21 +166,80 @@ export default function App() {
         </nav>
       )}
 
-      <div className="toast-container" style={{ position: 'fixed', top: '1rem', right: '1rem', zIndex: 1080 }}>
-        {toasts.map(t => <Toast key={t.id} {...t} onClose={removeToast} />)}
+      <div
+        className="toast-container"
+        style={{ position: 'fixed', top: '1rem', right: '1rem', zIndex: 1080 }}
+      >
+        {toasts.map((t) => (
+          <Toast key={t.id} {...t} onClose={removeToast} />
+        ))}
       </div>
 
       <div className="container mt-4">
         <Routes>
-          <Route path="/register" element={<RequireGuest><Register addToast={addToast}/></RequireGuest>} />
-          <Route path="/login" element={<RequireGuest><Login addToast={addToast} onLogin={setToken}/></RequireGuest>} />
-          <Route path="/profile" element={<RequireAuth><Profile addToast={addToast} user={user}/></RequireAuth>} />
-          <Route path="/pets" element={<RequireAuth><Pets addToast={addToast} user={user}/></RequireAuth>} />
-          <Route path="/activities" element={<RequireAuth><Activities addToast={addToast} user={user}/></RequireAuth>} />
-          <Route path="/lost-pets" element={<RequireAuth><LostReports addToast={addToast} user={user}/></RequireAuth>} />
-          <Route path="/lost-reports" element={<RequireAuth><LostReports addToast={addToast} user={user}/></RequireAuth>} />
-          <Route path="/" element={ token ? <Navigate to="/pets" replace/> : <Navigate to="/login" replace/> } />
-          <Route path="*" element={<Navigate to="/" replace/>} />
+          <Route
+            path="/register"
+            element={
+              <RequireGuest>
+                <Register addToast={addToast} />
+              </RequireGuest>
+            }
+          />
+          <Route
+            path="/login"
+            element={
+              <RequireGuest>
+                <Login addToast={addToast} onLogin={setToken} />
+              </RequireGuest>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <RequireAuth>
+                <Profile addToast={addToast} user={user} />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/pets"
+            element={
+              <RequireAuth>
+                <Pets addToast={addToast} user={user} />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/activities"
+            element={
+              <RequireAuth>
+                <Activities addToast={addToast} user={user} />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/lost-pets"
+            element={
+              <RequireAuth>
+                <LostPets addToast={addToast} user={user} />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/lost-reports"
+            element={
+              <RequireAuth>
+                <LostReports addToast={addToast} user={user} />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/"
+            element={
+              token ? <Navigate to="/pets" replace /> : <Navigate to="/login" replace />
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
     </>
