@@ -25,6 +25,8 @@ class ProfileController extends Controller
             'name'                  => 'required|string|max:100',
             'email'                 => 'required|email|unique:users,email,'.$user->id,
             'avatar'                => 'nullable|image|max:2048',
+            'latitude'  => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
         ]);
 
         if ($request->hasFile('avatar')) {

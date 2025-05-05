@@ -121,3 +121,21 @@ body {
   text-decoration: none;
   font-weight: 500;
 }
+body {
+  background-color: #f8f9fa;
+}
+h1 {
+  margin-bottom: 1rem;
+}
+.card {
+  border-radius: .5rem;
+}
+.accordion-button:not(.collapsed) {
+  background-color: #e9ecef;
+}
+.img-fluid {
+  border-radius: .5rem;
+  max-height: 300px;
+  object-fit: cover;
+}
+

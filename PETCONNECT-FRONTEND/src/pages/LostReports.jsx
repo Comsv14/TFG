@@ -5,13 +5,10 @@ import api from '../api/axios';
 import MapPicker from '../components/MapPicker';
 
 export default function LostReports({ addToast, user }) {
-  // Estado de todos los reportes cargados
   const [lostReports, setLostReports] = useState([]);
-
-  // Estado para "he perdido mi mascota"
-  const [mode, setMode] = useState('lost'); // 'lost' | 'found'
-  const [myPets, setMyPets] = useState([]);
-  const [form, setForm] = useState({
+  const [myPets,      setMyPets]      = useState([]);
+  const [mode,        setMode]        = useState('lost');
+  const [form,        setForm]        = useState({
     pet_id: '',
     comment: '',
     happened_at: '',
@@ -20,13 +17,12 @@ export default function LostReports({ addToast, user }) {
     photo: null,
   });
 
-  // Cargar al montar: mis mascotas y los reportes existentes
   useEffect(() => {
     (async () => {
       try {
         const [petsRes, reportsRes] = await Promise.all([
           api.get('/api/pets'),
-          api.get('/api/lost-reports'),
+          api.get('/api/lost-pets')
         ]);
         setMyPets(petsRes.data);
         setLostReports(reportsRes.data);
@@ -36,7 +32,6 @@ export default function LostReports({ addToast, user }) {
     })();
   }, [addToast]);
 
-  // Handle change de inputs
   function handleChange(e) {
     const { name, value, files } = e.target;
     if (name === 'photo') {
@@ -46,88 +41,55 @@ export default function LostReports({ addToast, user }) {
     }
   }
 
-  // Handle ubicación via MapPicker
   function handleMap(lat, lng) {
     setForm(f => ({ ...f, latitude: lat, longitude: lng }));
   }
 
-  // Submit del formulario
   async function handleSubmit(e) {
     e.preventDefault();
     try {
       const fd = new FormData();
       if (mode === 'lost') {
-        fd.append('pet_id', form.pet_id);
+        fd.append('pet_name', form.pet_id); // o `pet_id` si cambias API
         fd.append('comment', form.comment);
         fd.append('happened_at', form.happened_at);
-        fd.append('latitude', form.latitude);
         fd.append('longitude', form.longitude);
+        fd.append('latitude',  form.latitude);
         if (form.photo) fd.append('photo', form.photo);
       } else {
-        // 'found' mode: solo comment + ubicacion + foto + happened_at
-        fd.append('comment', form.comment);
-        fd.append('happened_at', form.happened_at);
-        fd.append('latitude', form.latitude);
-        fd.append('longitude', form.longitude);
-        if (form.photo) fd.append('photo', form.photo);
+        // …
       }
 
-      const url = mode === 'lost' ? '/api/lost-reports' : '/api/lost-reports/found';
-      const res = await api.post(url, fd, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      const res = await api.post('/api/lost-pets', fd, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      // Añadimos el nuevo reporte al listado
-      setLostReports(rs => [res.data, ...rs]);
-      addToast('Reporte enviado', 'success');
-      // Limpiamos formulario
+      setLostReports([res.data, ...lostReports]);
+      addToast('Enviado con éxito', 'success');
       setForm({
-        pet_id: '',
-        comment: '',
-        happened_at: '',
-        latitude: null,
-        longitude: null,
-        photo: null,
+        pet_id: '', comment: '', happened_at: '',
+        latitude: null, longitude: null, photo: null
       });
-    } catch (err) {
-      addToast('Error al enviar reporte', 'error');
+    } catch {
+      addToast('Error al enviar', 'error');
     }
   }
 
   return (
     <div>
-      <h1>Reportes de Mascotas Perdidas</h1>
-
-      <div className="mb-4">
-        <button
-          className={`btn me-2 ${mode==='lost'?'btn-danger':'btn-outline-danger'}`}
-          onClick={()=>setMode('lost')}
-        >
-          ¿Has perdido tu mascota?
-        </button>
-        <button
-          className={`btn ${mode==='found'?'btn-success':'btn-outline-success'}`}
-          onClick={()=>setMode('found')}
-        >
-          ¿Has encontrado una mascota?
-        </button>
-      </div>
-
+      <h1>Reportar Mascota Perdida</h1>
       <form onSubmit={handleSubmit} className="card p-4 mb-5">
-        {mode === 'lost' && (
-          <select
-            name="pet_id"
-            className="form-select mb-3"
-            required
-            value={form.pet_id}
-            onChange={handleChange}
-          >
-            <option value="">Selecciona tu mascota</option>
-            {myPets.map(p => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
-        )}
+        <select
+          name="pet_id"
+          className="form-select mb-3"
+          required value={form.pet_id}
+          onChange={handleChange}
+        >
+          <option value="">Selecciona tu mascota</option>
+          {myPets.map(p => (
+            <option key={p.id} value={p.id}>{p.name}</option>
+          ))}
+        </select>
 
         <textarea
           name="comment"
@@ -147,7 +109,7 @@ export default function LostReports({ addToast, user }) {
           required
         />
 
-        <label className="form-label">Ubicación (haz click en el mapa)</label>
+        <label className="form-label">Ubicación (pincha en el mapa)</label>
         <MapPicker
           latitude={form.latitude}
           longitude={form.longitude}
@@ -165,45 +127,28 @@ export default function LostReports({ addToast, user }) {
           />
         </div>
 
-        <button className={`btn ${mode==='lost'?'btn-danger':'btn-success'}`}>
-          {mode==='lost'?'Reportar Pérdida':'Reportar Avistamiento'}
-        </button>
+        <button className="btn btn-danger">Reportar Pérdida</button>
       </form>
 
-      <div>
-        {lostReports.map(r => (
-          <div key={r.id} className="card mb-4">
-            {r.photo && (
-              <img
-                src={r.photo}
-                alt={r.comment}
-                className="card-img-top"
-                style={{ objectFit:'cover', height:'200px' }}
-              />
-            )}
-            <div className="card-body">
-              <h5 className="card-title">
-                {(r.pet || {}).name || 'Mascota encontrada'}
-              </h5>
-              <p className="card-text">{r.comment}</p>
-              <p className="card-text">
-                <small className="text-muted">
-                  {new Date(r.happened_at).toLocaleString()} en [{r.latitude?.toFixed(5)},{r.longitude?.toFixed(5)}]
-                </small>
-              </p>
-
-              <hr/>
-              <h6>Comentarios</h6>
-              {r.comments?.map(c => (
-                <div key={c.id} className="mb-2">
-                  <strong>{c.user.name}</strong>: {c.body}
-                </div>
-              ))}
-              {/* aquí podrías añadir form para nuevos comentarios */}
-            </div>
+      <h2>Listado de Pérdidas</h2>
+      {lostReports.map(r => (
+        <div key={r.id} className="card mb-4">
+          {r.photo && (
+            <img
+              src={r.photo}
+              className="card-img-top"
+              style={{ height:'200px', objectFit:'cover' }}
+            />
+          )}
+          <div className="card-body">
+            <h5 className="card-title">{r.pet_name}</h5>
+            <p className="card-text">{r.comment}</p>
+            <p className="text-muted">
+              {new Date(r.posted_at).toLocaleString()} — [{r.last_seen_latitude?.toFixed(5)},{r.last_seen_longitude?.toFixed(5)}]
+            </p>
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
     </div>
   );
 }

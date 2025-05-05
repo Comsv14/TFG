@@ -8,7 +8,7 @@ export default function LostPets({ addToast, user }) {
   const [lostPets, setLostPets] = useState([]);
   const [forms, setForms] = useState({}); // { [petId]: { comment, latitude, longitude, photo } }
 
-  // Load all lost pets with their sightings
+  // Carga inicial de todas las mascotas perdidas con sus avistamientos
   useEffect(() => {
     fetchLostPets();
   }, []);
@@ -22,33 +22,32 @@ export default function LostPets({ addToast, user }) {
     }
   };
 
-  // Handle form field changes per pet
+  // Maneja cambios en el formulario de un pet concreto
   const handleFormChange = (petId, field, value) => {
-    setForms(f => ({
-      ...f,
+    setForms(prev => ({
+      ...prev,
       [petId]: {
-        ...f[petId],
+        ...prev[petId],
         [field]: value
       }
     }));
   };
 
-  // Submit a new sighting (comment) for a given pet
+  // Envía un nuevo avistamiento para una mascota
   const handleSightingSubmit = async petId => {
     const f = forms[petId] || {};
     const fd = new FormData();
-    if (f.comment) fd.append('comment', f.comment);
-    if (typeof f.latitude === 'number') fd.append('latitude', f.latitude);
+    if (f.comment)   fd.append('comment',   f.comment);
+    if (typeof f.latitude === 'number')  fd.append('latitude',  f.latitude);
     if (typeof f.longitude === 'number') fd.append('longitude', f.longitude);
-    if (f.photo) fd.append('photo', f.photo);
+    if (f.photo)     fd.append('photo',     f.photo);
 
     try {
       await api.post(`/api/lost-pets/${petId}/sightings`, fd, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       addToast('Avistamiento reportado', 'success');
-      // clear form for this pet
-      setForms(fm => ({ ...fm, [petId]: {} }));
+      setForms(prev => ({ ...prev, [petId]: {} }));
       fetchLostPets();
     } catch {
       addToast('Error al reportar avistamiento', 'error');

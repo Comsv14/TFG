@@ -1,5 +1,5 @@
 <?php
-// petconnect-backend/app/Http/Controllers/Api/LostPetController.php
+// app/Http/Controllers/Api/LostPetController.php
 
 namespace App\Http\Controllers\Api;
 
@@ -10,13 +10,11 @@ use Illuminate\Support\Facades\Storage;
 
 class LostPetController extends Controller
 {
-    /**
-     * GET /api/lost-pets
-     */
+    /** GET /api/lost-pets */
     public function index(Request $request)
     {
         $pets = LostPet::with(['user','sightings.user'])
-            // Cambiado: usamos posted_at en lugar de created_at
+            // Ordenamos por posted_at, no por created_at
             ->orderBy('posted_at','desc')
             ->get()
             ->map(function (LostPet $pet) {
@@ -29,9 +27,7 @@ class LostPetController extends Controller
         return response()->json($pets);
     }
 
-    /**
-     * POST /api/lost-pets
-     */
+    /** POST /api/lost-pets */
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -48,19 +44,16 @@ class LostPetController extends Controller
                                    ->store('lost-pets','public');
         }
 
-        // Relación lostPets() en User.php
         $lost = $request->user()->lostPets()->create($data);
 
         $lost->photo = $lost->photo
             ? url(Storage::url($lost->photo))
             : null;
 
-        return response()->json($lost, 201);
+        return response()->json($lost,201);
     }
 
-    /**
-     * PUT /api/lost-pets/{lost_pet}
-     */
+    /** PUT /api/lost-pets/{lost_pet} */
     public function update(Request $request, LostPet $lost_pet)
     {
         $data = $request->validate([
@@ -77,7 +70,7 @@ class LostPetController extends Controller
                 Storage::disk('public')->delete($lost_pet->photo);
             }
             $data['photo'] = $request->file('photo')
-                                   ->store('lost-pets','public');
+                                    ->store('lost-pets','public');
         }
 
         $lost_pet->update($data);
@@ -89,22 +82,17 @@ class LostPetController extends Controller
         return response()->json($lost_pet);
     }
 
-    /**
-     * DELETE /api/lost-pets/{lost_pet}
-     */
+    /** DELETE /api/lost-pets/{lost_pet} */
     public function destroy(LostPet $lost_pet)
     {
         if ($lost_pet->photo) {
             Storage::disk('public')->delete($lost_pet->photo);
         }
         $lost_pet->delete();
-
-        return response()->json(null, 204);
+        return response()->json(null,204);
     }
 
-    /**
-     * POST /api/lost-pets/{lost_pet}/sightings
-     */
+    /** POST /api/lost-pets/{lost_pet}/sightings */
     public function reportSighting(Request $request, LostPet $lost_pet)
     {
         $data = $request->validate([
@@ -129,6 +117,6 @@ class LostPetController extends Controller
             ? url(Storage::url($data['photo']))
             : null;
 
-        return response()->json($sighting, 201);
+        return response()->json($sighting,201);
     }
 }

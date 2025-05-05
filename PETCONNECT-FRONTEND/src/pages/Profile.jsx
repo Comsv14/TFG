@@ -1,4 +1,5 @@
-// PETCONNECT-FRONTEND/src/pages/Profile.jsx
+// src/pages/Profile.jsx
+
 import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
 import MapPicker from '../components/MapPicker';
@@ -14,6 +15,7 @@ export default function Profile({ addToast }) {
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // Carga inicial del perfil
   useEffect(() => {
     (async () => {
       try {
@@ -32,6 +34,7 @@ export default function Profile({ addToast }) {
     })();
   }, [addToast]);
 
+  // Maneja cambios en inputs y avatar
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     if (name === 'avatar') {
@@ -43,10 +46,12 @@ export default function Profile({ addToast }) {
     }
   };
 
+  // Maneja cambios de mapa
   const handleMapChange = (lat, lng) => {
     setForm((f) => ({ ...f, latitude: lat, longitude: lng }));
   };
 
+  // Envía formulario
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -109,6 +114,7 @@ export default function Profile({ addToast }) {
           onChange={handleChange}
           required
         />
+
         <input
           name="email"
           type="email"

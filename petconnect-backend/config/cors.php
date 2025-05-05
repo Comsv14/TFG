@@ -15,7 +15,10 @@ return [
     'allowed_methods' => ['*'],
 
     // Orígenes permitidos (toma el env que acabas de definir)
-    'allowed_origins' => explode(',', env('CORS_ALLOWED_ORIGINS', '*')),
+    'allowed_origins' => explode(
+        ',', 
+        env('CORS_ALLOWED_ORIGINS', '*')
+    ),
 
     // ¿Debe permitir subdominios (wildcards)?
     'allowed_origins_patterns' => [],
@@ -28,4 +31,5 @@ return [
 
     // ¿Permitimos credenciales (cookies, Authorization headers, etc.)?
     'supports_credentials' => true,
+
 ];

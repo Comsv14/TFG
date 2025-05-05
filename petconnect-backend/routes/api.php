@@ -12,35 +12,39 @@ use App\Http\Controllers\Api\LostReportController;
 // Rutas públicas
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login',    [AuthController::class, 'login']);
-
-// CSRF endpoint
-Route::get('sanctum/csrf-cookie', [AuthController::class, 'csrfCookie'])->name('sanctum.csrfCookie');
+Route::get('sanctum/csrf-cookie', [AuthController::class, 'csrfCookie'])
+     ->name('sanctum.csrfCookie');
 
 // Rutas protegidas
 Route::middleware('auth:sanctum')->group(function () {
+    // Auth
     Route::post('logout', [AuthController::class, 'logout']);
 
+    // Perfil
     Route::get('profile', [ProfileController::class, 'show']);
     Route::post('profile', [ProfileController::class, 'update']);
 
+    // Mascotas
     Route::apiResource('pets', PetController::class);
 
+    // Actividades
     Route::apiResource('activities', ActivityController::class);
     Route::post('activities/{activity}/register', [ActivityController::class, 'register']);
 
+    // Comentarios
     Route::get('comments',    [CommentController::class, 'index']);
     Route::post('comments',   [CommentController::class, 'store']);
     Route::delete('comments/{comment}', [CommentController::class, 'destroy']);
 
+    // Mascotas perdidas
     Route::apiResource('lost-pets', LostPetController::class)->except(['update']);
     Route::put('lost-pets/{lost_pet}', [LostPetController::class, 'update']);
     Route::post('lost-pets/{lost_pet}/sightings', [LostPetController::class, 'reportSighting']);
 
-    Route::apiResource('lost-reports', LostReportController::class)
-         ->only(['index','store','destroy']);
+    // Reportes de pérdida
+    Route::get('lost-reports',                       [LostReportController::class, 'index']);
+    Route::post('lost-reports',                      [LostReportController::class, 'store']);
     Route::post('lost-reports/{lost_report}/toggle-resolved',
-               [LostReportController::class,'toggleResolved']);
-    Route::get('lost-reports',          [LostReportController::class,'index']);
-    Route::post('lost-reports',         [LostReportController::class,'store']);
-    Route::post('lost-reports/{id}/toggle-resolved', [LostReportController::class,'toggleResolved']);
+               [LostReportController::class, 'toggleResolved']);
+    Route::delete('lost-reports/{lost_report}',      [LostReportController::class, 'destroy']);
 });
