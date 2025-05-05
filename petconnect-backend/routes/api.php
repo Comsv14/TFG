@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\ActivityController;
 use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\LostPetController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\LostReportController;
 
 // Rutas públicas
 Route::post('register', [AuthController::class, 'register']);
@@ -34,4 +35,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('lost-pets', LostPetController::class)->except(['update']);
     Route::put('lost-pets/{lost_pet}', [LostPetController::class, 'update']);
     Route::post('lost-pets/{lost_pet}/sightings', [LostPetController::class, 'reportSighting']);
+
+    Route::apiResource('lost-reports', LostReportController::class)
+         ->only(['index','store','destroy']);
+    Route::post('lost-reports/{lost_report}/toggle-resolved',
+               [LostReportController::class,'toggleResolved']);
 });

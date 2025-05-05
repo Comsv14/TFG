@@ -5,6 +5,7 @@ use App\Models\LostPet;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Notifications\Notifiable;
+use App\Models\LostReport;
 
 class User extends Authenticatable
 {
@@ -36,5 +37,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(LostPet::class);
     }
+    public function lostReports()
+{
+    return $this->hasMany(LostReport::class);
+}
 
 }
