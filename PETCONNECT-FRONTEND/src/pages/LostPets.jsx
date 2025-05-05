@@ -1,159 +1,214 @@
 // src/pages/LostPets.jsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import api from '../api/axios';
-import MapPicker from '../components/MapPicker';
+import { Card, Row, Col, Form, Button } from 'react-bootstrap';
+import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import L from 'leaflet';
+
+// Haversine para distancia en km
+function distanceKm(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+            Math.cos(lat1 * Math.PI / 180) *
+            Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+// Icono por defecto Leaflet
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl:
+    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.3/images/marker-icon-2x.png',
+  iconUrl:
+    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.3/images/marker-icon.png',
+  shadowUrl:
+    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.3/images/marker-shadow.png',
+});
 
 export default function LostPets({ addToast, user }) {
   const [lostPets, setLostPets] = useState([]);
-  const [forms, setForms] = useState({}); // { [petId]: { comment, latitude, longitude, photo } }
+  const [filters, setFilters] = useState({
+    name: '',
+    fromDate: '',
+    toDate: '',
+    nearMe: false,
+    maxKm: 20,
+    recentFirst: true,
+  });
 
-  // Carga inicial de todas las mascotas perdidas con sus avistamientos
-  useEffect(() => {
-    fetchLostPets();
-  }, []);
-
-  const fetchLostPets = async () => {
+  // carga inicial
+  const fetchLostPets = useCallback(async () => {
     try {
       const { data } = await api.get('/api/lost-pets');
       setLostPets(data);
     } catch {
-      addToast('Error al cargar mascotas perdidas', 'error');
+      addToast('Error cargando registros de pérdidas', 'error');
     }
-  };
+  }, [addToast]);
 
-  // Maneja cambios en el formulario de un pet concreto
-  const handleFormChange = (petId, field, value) => {
-    setForms(prev => ({
-      ...prev,
-      [petId]: {
-        ...prev[petId],
-        [field]: value
+  useEffect(() => {
+    fetchLostPets();
+  }, [fetchLostPets]);
+
+  // Provincias únicas extraídas de last_seen_location
+  const provinces = useMemo(() => {
+    return Array.from(new Set(
+      lostPets.map(p => p.last_seen_location).filter(Boolean)
+    ));
+  }, [lostPets]);
+
+  // Lista filtrada y ordenada
+  const filtered = useMemo(() => {
+    let arr = lostPets.filter(p => {
+      // filtro por nombre
+      if (filters.name && !p.pet_name.toLowerCase().includes(filters.name.toLowerCase())) {
+        return false;
       }
-    }));
-  };
+      // filtro por fecha
+      const dt = new Date(p.posted_at);
+      if (filters.fromDate && dt < new Date(filters.fromDate)) return false;
+      if (filters.toDate && dt > new Date(filters.toDate))   return false;
+      // filtro cerca de mí
+      if (filters.nearMe && user.latitude && user.longitude) {
+        const km = distanceKm(
+          user.latitude, user.longitude,
+          p.last_seen_latitude, p.last_seen_longitude
+        );
+        if (km > filters.maxKm) return false;
+      }
+      return true;
+    });
 
-  // Envía un nuevo avistamiento para una mascota
-  const handleSightingSubmit = async petId => {
-    const f = forms[petId] || {};
-    const fd = new FormData();
-    if (f.comment)   fd.append('comment',   f.comment);
-    if (typeof f.latitude === 'number')  fd.append('latitude',  f.latitude);
-    if (typeof f.longitude === 'number') fd.append('longitude', f.longitude);
-    if (f.photo)     fd.append('photo',     f.photo);
+    // ordenar por fecha
+    arr = arr.sort((a, b) => {
+      const da = new Date(a.posted_at), db = new Date(b.posted_at);
+      return filters.recentFirst ? db - da : da - db;
+    });
 
-    try {
-      await api.post(`/api/lost-pets/${petId}/sightings`, fd, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      addToast('Avistamiento reportado', 'success');
-      setForms(prev => ({ ...prev, [petId]: {} }));
-      fetchLostPets();
-    } catch {
-      addToast('Error al reportar avistamiento', 'error');
-    }
-  };
+    return arr;
+  }, [lostPets, filters, user]);
 
   return (
-    <div className="row">
-      {lostPets.map(pet => {
-        const f = forms[pet.id] || {};
-        return (
-          <div key={pet.id} className="col-md-6 mb-4">
-            <div className="card h-100">
-              {pet.photo && (
-                <img
-                  src={pet.photo}
-                  className="card-img-top"
-                  alt={pet.pet_name}
-                  style={{ objectFit: 'cover', height: '250px' }}
+    <>
+      <h1>Mascotas Perdidas</h1>
+
+      {/* → PANEL DE FILTROS ← */}
+      <Card className="p-3 mb-4">
+        <Row className="gy-2">
+          <Col md>
+            <Form.Control
+              placeholder="Buscar por nombre..."
+              value={filters.name}
+              onChange={e => setFilters(f => ({ ...f, name: e.target.value }))}
+            />
+          </Col>
+          <Col md>
+            <Form.Control
+              type="date"
+              placeholder="Desde"
+              value={filters.fromDate}
+              onChange={e => setFilters(f => ({ ...f, fromDate: e.target.value }))}
+            />
+          </Col>
+          <Col md>
+            <Form.Control
+              type="date"
+              placeholder="Hasta"
+              value={filters.toDate}
+              onChange={e => setFilters(f => ({ ...f, toDate: e.target.value }))}
+            />
+          </Col>
+          <Col md>
+            <Form.Select
+              value={filters.province}
+              onChange={e => setFilters(f => ({ ...f, province: e.target.value }))}
+            >
+              <option value="">Todas las provincias</option>
+              {provinces.map(pr => (
+                <option key={pr} value={pr}>{pr}</option>
+              ))}
+            </Form.Select>
+          </Col>
+          <Col md="auto" className="d-flex align-items-center">
+            <Form.Check 
+              type="checkbox"
+              label={`Cerca de mí (${filters.maxKm} km)`}
+              checked={filters.nearMe}
+              onChange={e => setFilters(f => ({ ...f, nearMe: e.target.checked }))}
+            />
+          </Col>
+          <Col md="auto" className="d-flex align-items-center">
+            <Form.Check 
+              type="checkbox"
+              label="Más recientes primero"
+              checked={filters.recentFirst}
+              onChange={e => setFilters(f => ({ ...f, recentFirst: e.target.checked }))}
+            />
+          </Col>
+        </Row>
+      </Card>
+
+      {/* → GRID DE TARJETAS ← */}
+      <Row>
+        {filtered.length === 0 && (
+          <Col>
+            <p className="text-center text-muted">No hay mascotas que coincidan.</p>
+          </Col>
+        )}
+
+        {filtered.map(p => (
+          <Col md={6} lg={4} key={p.id} className="mb-4">
+            <Card className="h-100">
+              {p.photo && (
+                <Card.Img
+                  variant="top"
+                  src={p.photo}
+                  style={{ height: '200px', objectFit: 'cover' }}
                 />
               )}
-              <div className="card-body d-flex flex-column">
-                <h5 className="card-title">{pet.pet_name}</h5>
-                {pet.description && <p className="card-text">{pet.description}</p>}
-                {pet.last_seen_location && (
-                  <p className="text-muted mb-1">
-                    <strong>Última ubicación:</strong> {pet.last_seen_location}
-                  </p>
-                )}
-                <p className="text-muted mb-3">
-                  <small>Reportado: {new Date(pet.posted_at).toLocaleString()}</small>
-                </p>
+              <Card.Body className="d-flex flex-column">
+                <Card.Title>{p.pet_name}</Card.Title>
+                {p.description && <Card.Text>{p.description}</Card.Text>}
 
-                <hr />
-
-                <h6>Avistamientos</h6>
-                {pet.sightings && pet.sightings.length > 0 ? (
-                  pet.sightings.map(s => (
-                    <div key={s.id} className="mb-3">
-                      <div>
-                        <strong>{s.user.name}</strong>{' '}
-                        <small className="text-muted">
-                          ({new Date(s.created_at).toLocaleString()})
-                        </small>
-                      </div>
-                      {s.comment && <p>{s.comment}</p>}
-                      {s.photo && (
-                        <img
-                          src={s.photo}
-                          alt="avistamiento"
-                          className="img-fluid mb-2"
-                          style={{ maxHeight: '120px' }}
-                        />
-                      )}
-                      {(typeof s.latitude === 'number' && typeof s.longitude === 'number') && (
-                        <small className="text-muted">
-                          Coordenadas: {s.latitude.toFixed(5)}, {s.longitude.toFixed(5)}
-                        </small>
-                      )}
-                      <hr className="my-2" />
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-muted">Sin avistamientos todavía.</p>
-                )}
-
-                <hr />
-
-                <h6>Nuevo avistamiento</h6>
-                <textarea
-                  className="form-control mb-2"
-                  placeholder="Tu comentario..."
-                  value={f.comment || ''}
-                  onChange={e => handleFormChange(pet.id, 'comment', e.target.value)}
-                />
-
-                <label className="form-label mb-1">Ubicación</label>
-                <MapPicker
-                  latitude={f.latitude}
-                  longitude={f.longitude}
-                  onChange={(lat, lng) => {
-                    handleFormChange(pet.id, 'latitude', lat);
-                    handleFormChange(pet.id, 'longitude', lng);
-                  }}
-                />
-
-                <div className="mb-3 mt-2">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="form-control"
-                    onChange={e => handleFormChange(pet.id, 'photo', e.target.files[0])}
-                  />
+                <div style={{ height: '150px', marginBottom: '1rem' }}>
+                  <MapContainer
+                    center={[p.last_seen_latitude, p.last_seen_longitude]}
+                    zoom={13}
+                    dragging={false}
+                    doubleClickZoom={false}
+                    scrollWheelZoom={false}
+                    zoomControl={false}
+                    style={{ height: '100%', width: '100%' }}
+                  >
+                    <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                    <Marker position={[p.last_seen_latitude, p.last_seen_longitude]} />
+                  </MapContainer>
                 </div>
 
-                <button
-                  className="btn btn-primary mt-auto"
-                  onClick={() => handleSightingSubmit(pet.id)}
-                >
-                  Publicar comentario
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      })}
-    </div>
+                <small className="text-muted mb-2">
+                  Reportado: {new Date(p.posted_at).toLocaleString()}
+                </small>
+
+                <div className="mt-auto">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => {
+                      /* aquí podrías abrir un modal con mayor info */
+                    }}
+                  >
+                    Ver detalles
+                  </Button>
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+        ))}
+      </Row>
+    </>
   );
 }
