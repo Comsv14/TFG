@@ -15,6 +15,7 @@ import Pets from './pages/Pets';
 import Activities from './pages/Activities';
 import LostPets from './pages/LostPets';
 import LostReports from './pages/LostReports';
+// eslint-disable-next-line
 import LostPetDetail from './pages/LostPetDetail';
 import Register from './pages/Register';
 import Login from './pages/Login';
@@ -189,7 +190,7 @@ export default function App() {
             path="/register"
             element={
               <RequireGuest>
-                <Register addToast={addToast} />
+                 <Register addToast={addToast} onLogin={setToken} />
               </RequireGuest>
             }
           />
