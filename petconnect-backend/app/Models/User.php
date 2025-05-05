@@ -29,4 +29,8 @@ class User extends Authenticatable
             ? url(\Illuminate\Support\Facades\Storage::url($this->avatar))
             : null;
     }
+    public function lostPets()
+    {
+        return $this->hasMany(LostPet::class);
+    }
 }
