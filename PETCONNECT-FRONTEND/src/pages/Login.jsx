@@ -7,34 +7,39 @@ export default function Login({ addToast, onLogin }) {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleChange = e => {
-    const { name, value } = e.target;
-    setForm(f => ({ ...f, [name]: value }));
-  };
+  /* ---------- handlers ---------- */
+  const handleChange = (e) =>
+    setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
 
-  const handleSubmit = async e => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
       const { data } = await api.post('/api/login', form);
+
+      /* éxito */
+      localStorage.setItem('token', data.token);
       onLogin(data.token);
       addToast('Inicio de sesión exitoso', 'success');
       navigate('/pets', { replace: true });
     } catch (err) {
-      console.error(err);
-      addToast(
-        err.response?.data?.message || 'Credenciales incorrectas',
-        'error'
-      );
+      /* -------- errores -------- */
+      if (err.response?.status === 401) {
+        addToast('Correo o contraseña incorrectos', 'error');
+      } else {
+        addToast('Error al iniciar sesión', 'error');
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  /* ---------- render ---------- */
   return (
     <div className="page-auth">
-      <h2>Iniciar Sesión</h2>
-      <form onSubmit={handleSubmit}>
+      <h2 className="mb-4 text-center">Iniciar Sesión</h2>
+
+      <form onSubmit={handleSubmit} style={{ maxWidth: 400 }} className="mx-auto">
         <input
           name="email"
           type="email"
@@ -44,6 +49,7 @@ export default function Login({ addToast, onLogin }) {
           onChange={handleChange}
           required
         />
+
         <input
           name="password"
           type="password"
@@ -53,10 +59,12 @@ export default function Login({ addToast, onLogin }) {
           onChange={handleChange}
           required
         />
+
         <button className="btn btn-primary w-100" disabled={loading}>
-          {loading ? 'Ingresando...' : 'Ingresar'}
+          {loading ? 'Ingresando…' : 'Ingresar'}
         </button>
       </form>
+
       <p className="mt-3 text-center">
         ¿No tienes cuenta?{' '}
         <Link to="/register" className="btn btn-link p-0">
