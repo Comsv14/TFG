@@ -24,6 +24,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('profile', [ProfileController::class, 'show']);
     Route::post('profile', [ProfileController::class, 'update']);
 
+    /* ---------- ACTIVITIES ------------------------------ */
+    Route::apiResource('activities', ActivityController::class);
+    Route::post('activities/{activity}/join', [ActivityController::class, 'join']);
+    Route::post('activities/{activity}/rate', [ActivityController::class, 'rate']);
+
     // Mascotas
     Route::apiResource('pets', PetController::class);
 
