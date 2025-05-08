@@ -6,7 +6,6 @@ import { Card, CardContent } from '@/components/ui/card';
 export default function ActivitiesPage() {
   const [activities, setActivities] = useState([]);
 
-  /* --------- Carga inicial ----------------------------------------- */
   useEffect(() => {
     load();
   }, []);
@@ -16,58 +15,39 @@ export default function ActivitiesPage() {
     setActivities(list);
   }
 
-  const active   = activities.filter(a => !a.is_finished);
-  const finished = activities.filter(a =>  a.is_finished);
+  const handleRate = async (activityId, rating) => {
+    await activityApi.rate(activityId, rating);
+    setActivities(prevActivities =>
+      prevActivities.map(act =>
+        act.id === activityId
+          ? { ...act, average_rating: rating }
+          : act
+      )
+    );
+  };
 
-  /* --------- Render ------------------------------------------------- */
   return (
     <div className="container mx-auto p-4 space-y-10">
-      {/* ACTIVAS ------------------------------------------------------ */}
       <section>
         <h2 className="text-2xl font-semibold mb-4">Próximas / Activas</h2>
         <div className="grid md:grid-cols-2 gap-4">
-          {active.map(act => (
+          {activities.map(act => (
             <Card key={act.id} className="flex flex-col">
               <CardContent className="p-4 space-y-2 flex-1">
                 <h3 className="text-xl font-medium">{act.title}</h3>
-                <p className="text-sm">{act.description}</p>
+                <p>{act.description}</p>
                 <p className="text-sm italic">
                   {new Date(act.starts_at).toLocaleString()} &mdash;{' '}
                   {new Date(act.ends_at).toLocaleString()}
                 </p>
-
                 <p className="text-sm">
                   Asistentes: <strong>{act.participants_count}</strong>
                 </p>
-
-                <div className="mt-auto">
-                  <StarRater
-                    value={act.average_rating}
-                    disabled={!act.is_finished}
-                    onRate={rating => activityApi.rate(act.id, rating).then(load)}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
-
-      {/* FINALIZADAS -------------------------------------------------- */}
-      <section>
-        <h2 className="text-2xl font-semibold mb-4">Finalizadas</h2>
-        <div className="grid md:grid-cols-2 gap-4">
-          {finished.map(act => (
-            <Card key={act.id}>
-              <CardContent className="p-4 space-y-2">
-                <h3 className="text-xl font-medium">{act.title}</h3>
-                <p className="text-sm">{act.description}</p>
-
-                <p className="text-sm">
-                  Participantes: <strong>{act.participants_count}</strong>
-                </p>
-
-                <StarRater value={act.average_rating} readOnly />
+                <StarRater
+                  value={act.average_rating}
+                  readOnly={!act.is_finished}
+                  onRate={(rating) => handleRate(act.id, rating)}
+                />
               </CardContent>
             </Card>
           ))}

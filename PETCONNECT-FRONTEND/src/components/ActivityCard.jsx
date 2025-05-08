@@ -4,7 +4,7 @@ import StarRater from './StarRater';
 export default function ActivityCard({
   activity,
   onJoin,
-  onRate,            // ← nuevo callback
+  onRate, 
 }) {
   const {
     title,
@@ -18,55 +18,37 @@ export default function ActivityCard({
     average_rating,
   } = activity;
 
+  const handleRate = (newRating) => {
+    if (onRate) onRate(newRating);
+  };
+
   return (
     <div className="card">
       <div className="card-body">
-        {/* ── TÍTULO Y AUTOR ───────────────────────────────────── */}
         <h5 className="card-title">{title}</h5>
         <p className="text-muted small mb-2">
           Propuesta por: {user?.name || '-'}
         </p>
 
-        {/* ── FECHAS ──────────────────────────────────────────── */}
-        <p className="mb-1">
-          <strong>Inicio:</strong>{' '}
-          {new Date(starts_at).toLocaleString()}
-        </p>
-        {ends_at && (
-          <p className="mb-2">
-            <strong>Fin:</strong>{' '}
-            {new Date(ends_at).toLocaleString()}
-          </p>
-        )}
+        <p className="mb-1"><strong>Inicio:</strong> {new Date(starts_at).toLocaleString()}</p>
+        {ends_at && <p className="mb-2"><strong>Fin:</strong> {new Date(ends_at).toLocaleString()}</p>}
 
-        {/* ── UBICACIÓN ───────────────────────────────────────── */}
-        {location && (
-          <p className="mb-2">
-            <strong>Lugar:</strong> {location}
-          </p>
-        )}
+        {location && <p className="mb-2"><strong>Lugar:</strong> {location}</p>}
 
-        {/* ── ASISTENTES ─────────────────────────────────────── */}
-        <p className="mb-2">
-          <strong>Asistentes:</strong> {participants_count}
-        </p>
+        <p className="mb-2"><strong>Asistentes:</strong> {participants_count}</p>
 
-        {/* ── ESTRELLAS (solo cuando ha finalizado) ───────────── */}
+        {/* ── ESTRELLAS ─────────────────────────────────────── */}
         <div className="mb-3">
           <StarRater
-            value={average_rating}
-            disabled={!is_finished}
+            activityId={activity.id}
+            initialValue={average_rating}
             readOnly={!is_finished}
-            onRate={score => onRate?.(score)}
+            onRate={handleRate}
           />
         </div>
 
-        {/* ── BOTÓN APUNTARSE ─────────────────────────────────── */}
         <button
-          className={
-            'btn ' +
-            (is_registered ? 'btn-secondary disabled' : 'btn-primary')
-          }
+          className={'btn ' + (is_registered ? 'btn-secondary disabled' : 'btn-primary')}
           onClick={onJoin}
           disabled={is_registered}
         >

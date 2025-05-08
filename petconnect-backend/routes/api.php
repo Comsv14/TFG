@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\ActivityController;
 use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\LostPetController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\ActivityRatingController;
 use App\Http\Controllers\Api\LostReportController;
 
 // Rutas públicas
@@ -28,6 +29,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('activities', ActivityController::class);
     Route::post('activities/{activity}/join', [ActivityController::class, 'join']);
     Route::post('activities/{activity}/rate', [ActivityController::class, 'rate']);
+
+    Route::post('/activity-ratings', [ActivityRatingController::class, 'store']);
+    Route::get('/activity-ratings/{activity_id}/average', [ActivityRatingController::class, 'average']);
 
     // Mascotas
     Route::apiResource('pets', PetController::class);

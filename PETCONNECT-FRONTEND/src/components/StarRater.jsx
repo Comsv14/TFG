@@ -1,38 +1,51 @@
-import { useState } from 'react';
-import { Star } from 'lucide-react';
-import clsx from 'clsx';
+import React, { useState } from 'react';
+import ReactStars from 'react-rating-stars-component';
+import api from '../api/axios'; // Asegúrate de que esta ruta sea correcta
 
-/**
- * value        → número (media o nota propia)
- * onRate(score)→ callback cuando el usuario elige puntuación
- * disabled     → no permite clic
- * readOnly     → sólo muestra, sin hover/clic
- */
-export default function StarRater({ value = 0, onRate, disabled = false, readOnly = false }) {
-  const [hover, setHover] = useState(null);
+const StarRater = ({ activityId, initialValue = 0, readOnly = false, onRate }) => {
+  const [rating, setRating] = useState(initialValue);
+  const [loading, setLoading] = useState(false);
 
-  const shown = hover ?? value;
+  const handleRatingChange = (newRating) => {
+    setRating(newRating);
+  };
 
-  function handle(rate) {
-    if (disabled || readOnly) return;
-    onRate?.(rate);
-  }
+  const handleSubmit = async () => {
+    if (readOnly || loading) return;
+    setLoading(true);
+
+    try {
+      await api.post('/api/activity-ratings', {
+        activity_id: activityId,
+        rating: rating,
+      });
+      onRate?.(rating);
+    } catch (error) {
+      console.error("Error al enviar la valoración:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="flex space-x-1">
-      {[1, 2, 3, 4, 5].map(star => (
-        <Star
-          key={star}
-          className={clsx(
-            'w-6 h-6 cursor-pointer transition-transform',
-            shown >= star ? 'fill-current' : 'stroke-current',
-            disabled || readOnly ? 'opacity-40 cursor-default' : 'hover:scale-110'
-          )}
-          onMouseEnter={() => !disabled && !readOnly && setHover(star)}
-          onMouseLeave={() => setHover(null)}
-          onClick={() => handle(star)}
-        />
-      ))}
+    <div className="star-rater">
+      <ReactStars
+        count={5}
+        value={rating}
+        onChange={handleRatingChange}
+        size={24}
+        activeColor="#ffd700"
+        edit={!readOnly}
+      />
+      <button
+        className="btn btn-primary mt-2"
+        onClick={handleSubmit}
+        disabled={readOnly || loading}
+      >
+        {loading ? 'Enviando...' : 'Enviar valoración'}
+      </button>
     </div>
   );
-}
+};
+
+export default StarRater;
