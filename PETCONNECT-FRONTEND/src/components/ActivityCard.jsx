@@ -1,40 +1,76 @@
 import React from 'react';
+import StarRater from './StarRater';
 
-export default function ActivityCard({ activity, onJoin }) {
+export default function ActivityCard({
+  activity,
+  onJoin,
+  onRate,            // ← nuevo callback
+}) {
+  const {
+    title,
+    user,
+    starts_at,
+    ends_at,
+    location,
+    is_registered,
+    is_finished,
+    participants_count,
+    average_rating,
+  } = activity;
+
   return (
     <div className="card">
       <div className="card-body">
-        <h5 className="card-title">{activity.title}</h5>
+        {/* ── TÍTULO Y AUTOR ───────────────────────────────────── */}
+        <h5 className="card-title">{title}</h5>
         <p className="text-muted small mb-2">
-          Propuesta por: {activity.user?.name || '-'}
+          Propuesta por: {user?.name || '-'}
         </p>
+
+        {/* ── FECHAS ──────────────────────────────────────────── */}
         <p className="mb-1">
           <strong>Inicio:</strong>{' '}
-          {new Date(activity.starts_at).toLocaleString()}
+          {new Date(starts_at).toLocaleString()}
         </p>
-        {activity.ends_at && (
+        {ends_at && (
           <p className="mb-2">
             <strong>Fin:</strong>{' '}
-            {new Date(activity.ends_at).toLocaleString()}
-          </p>
-        )}
-        {activity.location && (
-          <p className="mb-3">
-            <strong>Lugar:</strong> {activity.location}
+            {new Date(ends_at).toLocaleString()}
           </p>
         )}
 
+        {/* ── UBICACIÓN ───────────────────────────────────────── */}
+        {location && (
+          <p className="mb-2">
+            <strong>Lugar:</strong> {location}
+          </p>
+        )}
+
+        {/* ── ASISTENTES ─────────────────────────────────────── */}
+        <p className="mb-2">
+          <strong>Asistentes:</strong> {participants_count}
+        </p>
+
+        {/* ── ESTRELLAS (solo cuando ha finalizado) ───────────── */}
+        <div className="mb-3">
+          <StarRater
+            value={average_rating}
+            disabled={!is_finished}
+            readOnly={!is_finished}
+            onRate={score => onRate?.(score)}
+          />
+        </div>
+
+        {/* ── BOTÓN APUNTARSE ─────────────────────────────────── */}
         <button
           className={
             'btn ' +
-            (activity.is_registered
-              ? 'btn-secondary disabled'
-              : 'btn-primary')
+            (is_registered ? 'btn-secondary disabled' : 'btn-primary')
           }
           onClick={onJoin}
-          disabled={activity.is_registered}
+          disabled={is_registered}
         >
-          {activity.is_registered ? 'Ya inscrito' : 'Apuntarse'}
+          {is_registered ? 'Ya inscrito' : 'Apuntarse'}
         </button>
       </div>
     </div>
