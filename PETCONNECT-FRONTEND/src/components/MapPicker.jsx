@@ -1,55 +1,56 @@
-// PETCONNECT-FRONTEND/src/components/MapPicker.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
-// Configuración de iconos
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.3/images/marker-icon-2x.png',
-  iconUrl:
-    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.3/images/marker-icon.png',
-  shadowUrl:
-    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.3/images/marker-shadow.png',
+// Configuración del icono de marcador predeterminado
+const customMarker = new L.Icon({
+  iconUrl: L.Icon.Default.prototype._getIconUrl('marker-icon.png'),
+  iconRetinaUrl: L.Icon.Default.prototype._getIconUrl('marker-icon-2x.png'),
+  shadowUrl: L.Icon.Default.prototype._getIconUrl('marker-shadow.png'),
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
 });
 
-export default function MapPicker({ latitude, longitude, onChange }) {
-  const [pos, setPos] = useState([
-    latitude ?? 40.4168,
-    longitude ?? -3.7038,
-  ]);
+function LocationMarker({ latitude, longitude, onChange }) {
+  const map = useMapEvents({
+    click(e) {
+      const { lat, lng } = e.latlng;
+      onChange(lat, lng);
+    },
+  });
 
   useEffect(() => {
-    if (latitude != null && longitude != null) {
-      setPos([latitude, longitude]);
+    if (latitude && longitude) {
+      map.setView([latitude, longitude], 15);
     }
-  }, [latitude, longitude]);
+  }, [latitude, longitude, map]);
 
-  function LocationMarker() {
-    useMapEvents({
-      click(e) {
-        const { lat, lng } = e.latlng;
-        setPos([lat, lng]);
-        onChange(lat, lng);
-      },
-    });
-    return <Marker position={pos} />;
-  }
+  return latitude && longitude ? (
+    <Marker position={[latitude, longitude]} icon={customMarker}></Marker>
+  ) : null;
+}
+
+export default function MapPicker({ latitude, longitude, onChange }) {
+  const defaultPosition = [40.4168, -3.7038]; // Madrid por defecto
 
   return (
     <MapContainer
-      center={pos}
-      zoom={latitude != null && longitude != null ? 13 : 6}
-      minZoom={2}
-      maxZoom={18}
-      style={{ height: '300px', width: '100%', borderRadius: '0.5rem' }}
+      center={latitude && longitude ? [latitude, longitude] : defaultPosition}
+      zoom={latitude && longitude ? 15 : 10}
+      style={{ height: '300px', width: '100%' }}
     >
       <TileLayer
-        attribution="&copy; OpenStreetMap contributors"
-        url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      <LocationMarker />
+      <LocationMarker
+        latitude={latitude}
+        longitude={longitude}
+        onChange={onChange}
+      />
     </MapContainer>
   );
 }

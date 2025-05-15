@@ -19,10 +19,6 @@ export default function ActivityForm({ addToast, onCreated }) {
     setForm(f => ({ ...f, [name]: value }));
   };
 
-  const handleMapChange = (lat, lng) => {
-    setForm(f => ({ ...f, latitude: lat, longitude: lng }));
-  };
-
   const handleSubmit = async e => {
     e.preventDefault();
     setLoading(true);
@@ -39,6 +35,8 @@ export default function ActivityForm({ addToast, onCreated }) {
       await api.post('/api/activities', fd, {
         headers: {'Content-Type':'multipart/form-data'}
       });
+      
+      addToast('Actividad creada correctamente', 'success');
       onCreated();
       setForm({
         title: '',
@@ -50,7 +48,8 @@ export default function ActivityForm({ addToast, onCreated }) {
         longitude: null,
       });
     } catch (err) {
-      addToast('Error creando actividad','error');
+      console.error(err);
+      addToast('Error creando actividad', 'error');
     } finally {
       setLoading(false);
     }
@@ -84,12 +83,20 @@ export default function ActivityForm({ addToast, onCreated }) {
             onChange={handleChange}
           />
 
+          {/* Aquí va el MapPicker */}
           <label className="form-label">Selecciona ubicación en el mapa</label>
-          <MapPicker
-            latitude={form.latitude}
-            longitude={form.longitude}
-            onChange={handleMapChange}
+          <MapPicker 
+            latitude={form.latitude} 
+            longitude={form.longitude} 
+            onChange={(lat, lng) => setForm(f => ({ ...f, latitude: lat, longitude: lng }))} 
           />
+          {form.latitude && form.longitude ? (
+            <p className="text-muted mt-2">
+              Ubicación seleccionada: {form.latitude.toFixed(5)}, {form.longitude.toFixed(5)}
+            </p>
+          ) : (
+            <p className="text-muted mt-2">Haz clic en el mapa para seleccionar la ubicación.</p>
+          )}
 
           <div className="row g-2 mt-3">
             <div className="col">

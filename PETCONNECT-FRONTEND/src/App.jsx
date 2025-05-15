@@ -20,6 +20,7 @@ import LostPetDetail from './pages/LostPetDetail';
 import Register from './pages/Register';
 import Login from './pages/Login';
 import Profile from './pages/Profile';
+import 'leaflet/dist/leaflet.css';
 
 export default function App() {
   const [toasts, setToasts] = useState([]);
