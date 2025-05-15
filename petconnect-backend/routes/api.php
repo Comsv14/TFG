@@ -35,6 +35,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Mascotas
     Route::apiResource('pets', PetController::class);
+    // En api.php
+    Route::post('lost-reports/{lost_report}/toggle-resolved', [LostReportController::class, 'toggleResolved']);
 
     // Actividades
     Route::apiResource('activities', ActivityController::class);

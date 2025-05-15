@@ -1,297 +1,143 @@
-import React, {
-  useState,
-  useEffect,
-  useMemo,
-  useCallback,
-  Fragment,
-} from 'react';
+import React, { useState, useEffect, useMemo, useCallback, Fragment } from 'react';
 import { Link } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import L from 'leaflet';
 import api from '../api/axios';
 
-/* -------------- Leaflet default icon -------------- */
+/* Leaflet default icon fix */
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.3/images/marker-icon-2x.png',
-  iconUrl:
-    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.3/images/marker-icon.png',
-  shadowUrl:
-    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.3/images/marker-shadow.png',
+  iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
+  iconUrl: require('leaflet/dist/images/marker-icon.png'),
+  shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
 });
 
-/* -------------- Haversine util (km) -------------- */
-function distanceKm(lat1, lon1, lat2, lon2) {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(a));
-}
-
-/* -------------- Component -------------- */
+/* Component */
 export default function LostPets({ addToast, user }) {
   const [lostPets, setLostPets] = useState([]);
+  const [tab, setTab] = useState('lost'); // 'lost' | 'found'
   const [expandedId, setExpandedId] = useState(null);
 
-  /* ---------- filters ---------- */
-  const [filters, setFilters] = useState({
-    name: '',
-    province: '',
-    fromDate: '',
-    toDate: '',
-    nearMe: false,
-    maxKm: 20,
-    recentFirst: true,
-  });
-
-  /* ---------- fetch ---------- */
+  /* Fetch lost pets */
   const fetchLostPets = useCallback(async () => {
     try {
-      const res = await api.get('/api/lost-pets');
-      setLostPets(res.data.data ?? res.data);
+      const res = await api.get('/api/lost-reports');
+      setLostPets(res.data);
     } catch {
-      addToast('Error cargando pérdidas', 'error');
+      addToast('Error cargando mascotas perdidas', 'error');
     }
-  }, []);               // ← sin addToast aquí
+  }, [addToast]);
 
   useEffect(() => {
-    fetchLostPets();    // ← solo una vez
-  }, []);               // ← array vacío
+    fetchLostPets();
+  }, [fetchLostPets]);
 
-  /* ---------- provincias únicas ---------- */
-  const provinces = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          lostPets
-            .map(p => p.location)
-            .filter(loc => loc && loc.trim() !== '')
-        )
-      ),
-    [lostPets]
-  );
+  /* Mark as found (only for owner) */
+  const markAsFound = async (id) => {
+    try {
+      await api.post(`/api/lost-reports/${id}/toggle-resolved`);
+      addToast('Mascota marcada como encontrada', 'success');
+      fetchLostPets();
+    } catch {
+      addToast('Error al marcar como encontrada', 'error');
+    }
+  };
 
-  /* ---------- aplicar filtros + sort ---------- */
+  /* Filtered list */
   const filtered = useMemo(() => {
-    let arr = lostPets.filter(p => {
-      if (
-        filters.name &&
-        !p.pet.name.toLowerCase().includes(filters.name.toLowerCase())
-      )
-        return false;
-      if (filters.province && p.location !== filters.province) return false;
+    return lostPets.filter(p => (tab === 'lost' ? !p.resolved : p.resolved));
+  }, [lostPets, tab]);
 
-      const dt = new Date(p.posted_at);
-      if (filters.fromDate && dt < new Date(filters.fromDate)) return false;
-      if (filters.toDate && dt > new Date(filters.toDate)) return false;
-
-      if (filters.nearMe && user?.latitude && user?.longitude) {
-        const km = distanceKm(
-          user.latitude,
-          user.longitude,
-          p.lat,
-          p.lng
-        );
-        if (km > filters.maxKm) return false;
-      }
-      return true;
-    });
-
-    arr.sort((a, b) => {
-      const da = new Date(a.posted_at),
-        db = new Date(b.posted_at);
-      return filters.recentFirst ? db - da : da - db;
-    });
-
-    return arr;
-  }, [lostPets, filters, user]);
-
-  const toggleDetails = id =>
+  /* Toggle details */
+  const toggleDetails = (id) =>
     setExpandedId(expandedId === id ? null : id);
 
-  /* ---------- render ---------- */
   return (
     <Fragment>
-      <h1 className="mb-4">Mascotas Perdidas</h1>
+      <h1 className="mb-4">Mascotas Perdidas y Encontradas</h1>
 
-      {/* -------- panel de filtros -------- */}
-      <div className="card mb-4 p-3">
-        <div className="row g-2">
-          <div className="col-md">
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Buscar por nombre..."
-              value={filters.name}
-              onChange={e =>
-                setFilters(f => ({ ...f, name: e.target.value }))
-              }
-            />
-          </div>
-          <div className="col-md">
-            <select
-              className="form-select"
-              value={filters.province}
-              onChange={e =>
-                setFilters(f => ({ ...f, province: e.target.value }))
-              }
-            >
-              <option value="">Todas las provincias</option>
-              {provinces.map(pr => (
-                <option key={pr} value={pr}>
-                  {pr}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="col-md">
-            <input
-              type="date"
-              className="form-control"
-              value={filters.fromDate}
-              onChange={e =>
-                setFilters(f => ({ ...f, fromDate: e.target.value }))
-              }
-            />
-          </div>
-          <div className="col-md">
-            <input
-              type="date"
-              className="form-control"
-              value={filters.toDate}
-              onChange={e =>
-                setFilters(f => ({ ...f, toDate: e.target.value }))
-              }
-            />
-          </div>
-          <div className="col-auto d-flex align-items-center">
-            <div className="form-check me-3">
-              <input
-                id="nearMe"
-                type="checkbox"
-                className="form-check-input"
-                checked={filters.nearMe}
-                onChange={e =>
-                  setFilters(f => ({ ...f, nearMe: e.target.checked }))
-                }
-              />
-              <label htmlFor="nearMe" className="form-check-label">
-                Cerca de mí ({filters.maxKm} km)
-              </label>
-            </div>
-            <div className="form-check">
-              <input
-                id="recentFirst"
-                type="checkbox"
-                className="form-check-input"
-                checked={filters.recentFirst}
-                onChange={e =>
-                  setFilters(f => ({
-                    ...f,
-                    recentFirst: e.target.checked,
-                  }))
-                }
-              />
-              <label htmlFor="recentFirst" className="form-check-label">
-                Más recientes primero
-              </label>
-            </div>
-          </div>
-        </div>
+      {/* Tabs */}
+      <div className="mb-3">
+        <button
+          className={`btn ${tab === 'lost' ? 'btn-primary' : 'btn-outline-primary'}`}
+          onClick={() => setTab('lost')}
+        >
+          Mascotas Perdidas
+        </button>
+        <button
+          className={`btn ms-2 ${tab === 'found' ? 'btn-primary' : 'btn-outline-primary'}`}
+          onClick={() => setTab('found')}
+        >
+          Mascotas Encontradas
+        </button>
       </div>
 
-      {/* -------- grid de tarjetas -------- */}
+      {/* List of Lost Pets */}
       <div className="row">
-        {filtered.length === 0 && (
-          <div className="col-12 text-center text-muted my-5">
-            No hay mascotas que coincidan.
-          </div>
-        )}
-
-        {filtered.map(p => (
-          <div key={p.id} className="col-md-6 col-lg-4 mb-4">
-            <div className="card h-100 shadow-sm">
-              {p.photo ? (
-                <img
-                  src={p.photo}
-                  alt={p.pet.name}
-                  className="card-img-top"
-                  style={{ height: 200, objectFit: 'cover' }}
-                />
-              ) : (
-                <img
-                  src={`https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s+ff0000(${p.lng},${p.lat})/${p.lng},${p.lat},13/300x200?access_token=pk.eyJ1IjoiZGVtb3VzZXIiLCJhIjoiY2s4b2E0cHlvMDMxZDNqcGd2OXc1MGxkMSJ9.48tRArrVJPHWgIqi6qVrbA`}
-                  alt="map"
-                  className="card-img-top"
-                  style={{ height: 200, objectFit: 'cover' }}
-                />
-              )}
-
-              <div className="card-body d-flex flex-column">
-                <h5 className="card-title">{p.pet.name}</h5>
-
-                {p.comment && <p className="card-text">{p.comment}</p>}
-
-                <p className="mb-1">
-                  <strong>Ubicación:</strong> {p.location ?? '—'}
-                </p>
-                <p className="text-muted mb-3">
-                  Reportado:{' '}
-                  {new Date(p.posted_at).toLocaleDateString()}
-                </p>
-
-                <button
-                  className="btn btn-primary btn-sm mt-auto"
-                  onClick={() => toggleDetails(p.id)}
-                >
-                  {expandedId === p.id ? 'Ocultar detalles' : 'Ver detalles'}
-                </button>
-
-                {expandedId === p.id && (
-                  <div className="mt-3">
-                    {p.lat != null && p.lng != null && (
-                      <div style={{ height: 200, width: '100%' }}>
-                        <MapContainer
-                          center={[p.lat, p.lng]}
-                          zoom={13}
-                          dragging={false}
-                          doubleClickZoom={false}
-                          scrollWheelZoom={false}
-                          zoomControl={false}
-                          style={{ height: '100%', width: '100%' }}
-                        >
-                          <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                          <Marker position={[p.lat, p.lng]} />
-                        </MapContainer>
-                      </div>
-                    )}
-
-                    <p className="mt-2">
-                      <strong>Coordenadas:</strong>{' '}
-                      {p.lat?.toFixed(5)}, {p.lng?.toFixed(5)}
-                    </p>
-                    <p>
-                      <strong>Reportado por:</strong>{' '}
-                      {p.user?.name ?? 'Desconocido'}
-                    </p>
-                    <Link
-                      to={`/lost-pets/${p.id}`}
-                      className="btn btn-outline-secondary btn-sm w-100"
-                    >
-                      Página de detalles
-                    </Link>
-                  </div>
+        {filtered.length === 0 ? (
+          <p className="text-muted">No hay mascotas en esta categoría.</p>
+        ) : (
+          filtered.map(p => (
+            <div key={p.id} className="col-md-6 mb-4">
+              <div className="card">
+                {p.photo && (
+                  <img src={p.photo} alt={p.pet_name || 'Mascota'} className="card-img-top" style={{ height: 200, objectFit: 'cover' }} />
                 )}
+                <div className="card-body">
+                  <h5 className="card-title">
+                    {p.type === 'lost'
+                      ? p.pet?.name || 'Mascota Perdida'
+                      : p.pet_name || 'Mascota Encontrada'}
+                  </h5>
+                  <p>{p.comment}</p>
+                  {p.latitude && p.longitude && (
+                    <p><strong>Ubicación:</strong> [{p.latitude.toFixed(5)}, {p.longitude.toFixed(5)}]</p>
+                  )}
+                  <p><strong>Fecha:</strong> {new Date(p.happened_at).toLocaleString()}</p>
+
+                  <button
+                    className="btn btn-sm btn-info mt-2"
+                    onClick={() => toggleDetails(p.id)}
+                  >
+                    {expandedId === p.id ? 'Ocultar detalles' : 'Ver detalles'}
+                  </button>
+
+                  {expandedId === p.id && (
+                    <div className="mt-3">
+                      {p.latitude && p.longitude && (
+                        <MapContainer
+                          center={[p.latitude, p.longitude]}
+                          zoom={14}
+                          style={{ height: 200 }}
+                        >
+                          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                          <Marker position={[p.latitude, p.longitude]} />
+                        </MapContainer>
+                      )}
+
+                      <p className="mt-3">
+                        <strong>Reportado por:</strong> {p.user?.name || 'Desconocido'}
+                      </p>
+                      <p>
+                        <strong>Comentario:</strong> {p.comment}
+                      </p>
+
+                      {/* Mark as found button (only owner) */}
+                      {user?.id === p.user?.id && !p.resolved && (
+                        <button
+                          className="btn btn-success mt-3"
+                          onClick={() => markAsFound(p.id)}
+                        >
+                          Marcar como encontrada
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </Fragment>
   );

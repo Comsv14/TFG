@@ -2,47 +2,59 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class LostPet extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
+        'user_id',
         'pet_name',
         'description',
-        'photo',
         'last_seen_location',
         'last_seen_latitude',
         'last_seen_longitude',
+        'photo',
         'posted_at',
-        'user_id',
+        'found'
     ];
 
-    /** Esta tabla no tiene created_at / updated_at */
-    public $timestamps = false;
-
     protected $casts = [
+        'found' => 'boolean',
+        'last_seen_latitude' => 'float',
+        'last_seen_longitude' => 'float',
         'posted_at' => 'datetime',
     ];
 
-    /* ---------- Relaciones ---------- */
+    // Relación con el usuario (dueño)
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    public function pet()
-    {
-        return $this->belongsTo(Pet::class);
-    }
-
+    // Relación con avistamientos (sightings)
     public function sightings()
     {
-        return $this->hasMany(Sighting::class);
+        return $this->hasMany(LostPetSighting::class);
     }
 
-    /* ---------- Accesor ---------- */
+    // Accesor para la URL de la foto
     public function getPhotoUrlAttribute()
     {
-        return $this->photo ? asset('storage/'.$this->photo) : null;
+        return $this->photo ? url(Storage::url($this->photo)) : null;
+    }
+
+    // Scopes
+    public function scopeLost($query)
+    {
+        return $query->where('found', false);
+    }
+
+    public function scopeFound($query)
+    {
+        return $query->where('found', true);
     }
 }

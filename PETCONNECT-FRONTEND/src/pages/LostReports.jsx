@@ -1,13 +1,15 @@
-import React, { useState, useEffect, useCallback } from 'react';
+// src/pages/LostReports.jsx
+import React, { useState, useEffect, useCallback, Fragment } from 'react';
 import api from '../api/axios';
 import MapPicker from '../components/MapPicker';
 
 export default function LostReports({ addToast, user }) {
-  /* --------------- state --------------- */
-  const [lostReports, setLostReports] = useState([]);
-  const [myPets,      setMyPets]      = useState([]);
-  const [form,        setForm]        = useState({
+  const [reports, setReports] = useState([]);
+  const [myPets, setMyPets] = useState([]); // Tus mascotas
+  const [form, setForm] = useState({
+    type: 'lost',
     pet_id: '',
+    pet_name: '',
     comment: '',
     happened_at: '',
     latitude: null,
@@ -15,169 +17,200 @@ export default function LostReports({ addToast, user }) {
     photo: null,
   });
 
-  /* --------------- fetch --------------- */
-  const fetchData = useCallback(async () => {
+  // Obtener reportes y mascotas del usuario
+  const fetchReportsAndPets = useCallback(async () => {
     try {
-      const [petsRes, reportsRes] = await Promise.all([
-        api.get('/api/pets'),
-        api.get('/api/lost-pets'),
+      const [reportsRes, petsRes] = await Promise.all([
+        api.get('/api/lost-reports'),
+        api.get('/api/pets')
       ]);
-
-      setMyPets(
-        Array.isArray(petsRes.data) ? petsRes.data : petsRes.data?.data || []
-      );
-
-      const arr =
-        Array.isArray(reportsRes.data)
-          ? reportsRes.data
-          : Array.isArray(reportsRes.data?.data)
-          ? reportsRes.data.data
-          : [];
-      setLostReports(arr);
+      setReports(reportsRes.data);
+      setMyPets(petsRes.data);
     } catch {
-      addToast('Error cargando datos', 'error');
+      addToast('Error cargando reportes o mascotas', 'error');
     }
   }, [addToast]);
 
   useEffect(() => {
-    fetchData();
-  }, []);                     // ← solo al montar
+    fetchReportsAndPets();
+  }, [fetchReportsAndPets]);
 
-  /* --------------- handlers --------------- */
+  // Manejar cambios en el formulario
   const handleChange = (e) => {
     const { name, value, files } = e.target;
-    setForm((f) => ({
-      ...f,
+    setForm((prev) => ({
+      ...prev,
       [name]: name === 'photo' ? files[0] : value,
     }));
+
+    // Si selecciona una mascota, se autocompletan nombre y foto
+    if (name === 'pet_id' && value) {
+      const selectedPet = myPets.find((pet) => pet.id.toString() === value);
+      if (selectedPet) {
+        setForm((prev) => ({
+          ...prev,
+          pet_name: selectedPet.name,
+          photo: selectedPet.photo,
+        }));
+      }
+    }
   };
 
+  // Manejar mapa
   const handleMap = (lat, lng) => {
-    setForm((f) => ({ ...f, latitude: lat, longitude: lng }));
+    setForm((prev) => ({ ...prev, latitude: lat, longitude: lng }));
   };
 
+  // Enviar reporte
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const fd = new FormData();
-      fd.append('pet_name', form.pet_id);          // usar pet_id si tu API lo requiere
-      fd.append('comment',  form.comment);
-      fd.append('happened_at', form.happened_at);
-      fd.append('latitude',  form.latitude);
-      fd.append('longitude', form.longitude);
-      if (form.photo) fd.append('photo', form.photo);
-
-      const res = await api.post('/api/lost-pets', fd, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      Object.keys(form).forEach((key) => {
+        if (form[key]) fd.append(key, form[key]);
       });
 
-      /* Normaliza uno solo y lo añade al inicio */
-      const newReport = Array.isArray(res.data)
-        ? res.data[0]
-        : res.data?.data || res.data;
-      setLostReports((r) => [newReport, ...r]);
-
-      addToast('Enviado con éxito', 'success');
-      setForm({
-        pet_id: '',
-        comment: '',
-        happened_at: '',
-        latitude: null,
-        longitude: null,
-        photo: null,
-      });
+      await api.post('/api/lost-reports', fd);
+      fetchReportsAndPets();
+      resetForm();
+      addToast('Reporte enviado', 'success');
     } catch {
-      addToast('Error al enviar', 'error');
+      addToast('Error al enviar el reporte', 'error');
     }
   };
 
-  /* --------------- render --------------- */
+  // Resetear formulario
+  const resetForm = () => {
+    setForm({
+      type: 'lost',
+      pet_id: '',
+      pet_name: '',
+      comment: '',
+      happened_at: '',
+      latitude: null,
+      longitude: null,
+      photo: null,
+    });
+  };
+
   return (
-    <div>
-      <h1>Reportar Mascota Perdida</h1>
+    <Fragment>
+      <h1 className="mb-4">Reportar Mascota Perdida o Encontrada</h1>
 
-      {/* ---------- formulario ---------- */}
-      <form onSubmit={handleSubmit} className="card p-4 mb-5">
-        <select
-          name="pet_id"
-          className="form-select mb-3"
-          required
-          value={form.pet_id}
-          onChange={handleChange}
-        >
-          <option value="">Selecciona tu mascota</option>
-          {myPets.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
+      <form onSubmit={handleSubmit} className="card p-4 mb-4">
+        {/* Tipo de reporte */}
+        <div className="mb-3">
+          <label className="form-label">Tipo de Reporte</label>
+          <select name="type" value={form.type} onChange={handleChange} className="form-select">
+            <option value="lost">Reportar Mascota Perdida</option>
+            <option value="found">Reportar Mascota Encontrada</option>
+          </select>
+        </div>
 
-        <textarea
-          name="comment"
-          className="form-control mb-3"
-          placeholder="Comentario"
-          value={form.comment}
-          onChange={handleChange}
-          required
-        />
+        {/* Selección de mascota o nombre */}
+        {form.type === 'lost' ? (
+          <div className="mb-3">
+            <label className="form-label">Selecciona tu Mascota</label>
+            <select
+              name="pet_id"
+              className="form-select"
+              value={form.pet_id}
+              onChange={handleChange}
+            >
+              <option value="">-- Selecciona tu mascota --</option>
+              {myPets.map((pet) => (
+                <option key={pet.id} value={pet.id}>
+                  {pet.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <div className="mb-3">
+            <label className="form-label">Nombre de la Mascota Encontrada</label>
+            <input
+              name="pet_name"
+              className="form-control"
+              placeholder="Nombre de la mascota encontrada"
+              value={form.pet_name}
+              onChange={handleChange}
+            />
+          </div>
+        )}
 
-        <input
-          type="datetime-local"
-          name="happened_at"
-          className="form-control mb-3"
-          value={form.happened_at}
-          onChange={handleChange}
-          required
-        />
-
-        <label className="form-label">Ubicación (pincha en el mapa)</label>
-        <MapPicker
-          latitude={form.latitude}
-          longitude={form.longitude}
-          onChange={handleMap}
-        />
-
-        <div className="mt-3 mb-3">
-          <label className="form-label">Foto (opcional)</label>
-          <input
-            type="file"
-            name="photo"
-            accept="image/*"
+        {/* Descripción */}
+        <div className="mb-3">
+          <label className="form-label">Descripción del Reporte</label>
+          <textarea
+            name="comment"
             className="form-control"
+            placeholder="Describe los detalles del reporte"
+            value={form.comment}
             onChange={handleChange}
           />
         </div>
 
-        <button className="btn btn-danger">Reportar Pérdida</button>
+        {/* Fecha */}
+        <div className="mb-3">
+          <label className="form-label">Fecha del Incidente</label>
+          <input
+            type="datetime-local"
+            name="happened_at"
+            className="form-control"
+            value={form.happened_at}
+            onChange={handleChange}
+          />
+        </div>
+
+        {/* Mapa */}
+        <div className="mb-3">
+          <label className="form-label">Ubicación (Mapa)</label>
+          <MapPicker latitude={form.latitude} longitude={form.longitude} onChange={handleMap} />
+        </div>
+
+        {/* Foto */}
+        {form.type === 'found' && (
+          <div className="mb-3">
+            <label className="form-label">Foto (Opcional)</label>
+            <input type="file" name="photo" className="form-control" onChange={handleChange} />
+          </div>
+        )}
+
+        {/* Botón Enviar */}
+        <button className="btn btn-primary w-100 mt-3">Enviar Reporte</button>
       </form>
 
-      {/* ---------- listado ---------- */}
-      <h2>Listado de Pérdidas</h2>
-      {lostReports.length === 0 && (
-        <p className="text-muted">No hay reportes registrados.</p>
-      )}
-
-      {lostReports.map((r) => (
-        <div key={r.id} className="card mb-4">
-          {r.photo && (
-            <img
-              src={r.photo}
-              className="card-img-top"
-              style={{ height: 200, objectFit: 'cover' }}
-              alt="reporte"
-            />
-          )}
-          <div className="card-body">
-            <h5 className="card-title">{r.pet_name}</h5>
-            <p className="card-text">{r.comment}</p>
-            <p className="text-muted">
-              {new Date(r.posted_at).toLocaleString()} — [
-              {r.lat?.toFixed(5)},{r.lng?.toFixed(5)}]
-            </p>
-          </div>
-        </div>
-      ))}
-    </div>
+      {/* Listado de reportes */}
+      <h2 className="mb-4">Reportes Existentes</h2>
+      <div className="row">
+        {reports.length === 0 ? (
+          <p className="text-center text-muted">No hay reportes de mascotas perdidas.</p>
+        ) : (
+          reports.map((report) => (
+            <div key={report.id} className="col-md-6 mb-4">
+              <div className="card">
+                {report.photo && (
+                  <img src={report.photo} alt="Mascota Reportada" className="card-img-top" />
+                )}
+                <div className="card-body">
+                  <h5>{report.pet_name || 'Mascota Desconocida'}</h5>
+                  <p>{report.comment}</p>
+                  <p>
+                    <strong>Fecha del Incidente:</strong>{' '}
+                    {new Date(report.happened_at).toLocaleString()}
+                  </p>
+                  <p>
+                    <strong>Ubicación:</strong>{' '}
+                    {report.latitude && report.longitude
+                      ? `${report.latitude.toFixed(5)}, ${report.longitude.toFixed(5)}`
+                      : 'No especificada'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </Fragment>
   );
 }

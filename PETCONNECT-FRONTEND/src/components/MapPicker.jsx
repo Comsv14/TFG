@@ -1,56 +1,43 @@
-import React, { useEffect, useRef } from 'react';
+// src/components/MapPicker.jsx
+import React from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
-// Configuración del icono de marcador predeterminado
-const customMarker = new L.Icon({
-  iconUrl: L.Icon.Default.prototype._getIconUrl('marker-icon.png'),
-  iconRetinaUrl: L.Icon.Default.prototype._getIconUrl('marker-icon-2x.png'),
-  shadowUrl: L.Icon.Default.prototype._getIconUrl('marker-shadow.png'),
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
+// Configurar los íconos de Leaflet
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl:
+    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.3/images/marker-icon-2x.png',
+  iconUrl:
+    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.3/images/marker-icon.png',
+  shadowUrl:
+    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.3/images/marker-shadow.png',
 });
 
-function LocationMarker({ latitude, longitude, onChange }) {
-  const map = useMapEvents({
-    click(e) {
-      const { lat, lng } = e.latlng;
-      onChange(lat, lng);
-    },
-  });
+// Componente MapPicker
+export default function MapPicker({ latitude, longitude, onChange, readOnly = false }) {
+  const LocationMarker = () => {
+    useMapEvents({
+      click(e) {
+        if (!readOnly && onChange) {
+          const { lat, lng } = e.latlng;
+          onChange(lat, lng);
+        }
+      },
+    });
 
-  useEffect(() => {
-    if (latitude && longitude) {
-      map.setView([latitude, longitude], 15);
-    }
-  }, [latitude, longitude, map]);
-
-  return latitude && longitude ? (
-    <Marker position={[latitude, longitude]} icon={customMarker}></Marker>
-  ) : null;
-}
-
-export default function MapPicker({ latitude, longitude, onChange }) {
-  const defaultPosition = [40.4168, -3.7038]; // Madrid por defecto
+    return latitude && longitude ? <Marker position={[latitude, longitude]} /> : null;
+  };
 
   return (
     <MapContainer
-      center={latitude && longitude ? [latitude, longitude] : defaultPosition}
-      zoom={latitude && longitude ? 15 : 10}
-      style={{ height: '300px', width: '100%' }}
+      center={[latitude || 40.4168, longitude || -3.7038]}
+      zoom={13}
+      style={{ height: 300 }}
     >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      <LocationMarker
-        latitude={latitude}
-        longitude={longitude}
-        onChange={onChange}
-      />
+      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+      <LocationMarker />
     </MapContainer>
   );
 }

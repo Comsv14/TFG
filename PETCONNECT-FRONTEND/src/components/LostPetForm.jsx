@@ -1,15 +1,15 @@
-// PETCONNECT-FRONTEND/src/components/LostPetForm.jsx
 import React, { useState } from 'react';
 import api from '../api/axios';
 
-export default function LostPetForm({ onReport, addToast }) {
+export default function LostPetForm({ pets, addToast }) {
   const [form, setForm] = useState({
+    pet_id: '',
     pet_name: '',
     description: '',
     last_seen_location: '',
+    found: false,
     photo: null
   });
-  const [loading, setLoading] = useState(false);
 
   const handleChange = e => {
     const { name, value, files } = e.target;
@@ -21,76 +21,83 @@ export default function LostPetForm({ onReport, addToast }) {
 
   const handleSubmit = async e => {
     e.preventDefault();
-    setLoading(true);
     try {
       const fd = new FormData();
-      fd.append('pet_name', form.pet_name);
-      fd.append('description', form.description);
-      fd.append('last_seen_location', form.last_seen_location);
-      if (form.photo) fd.append('photo', form.photo);
+      Object.keys(form).forEach(key => {
+        if (form[key] !== null) {
+          fd.append(key, form[key]);
+        }
+      });
 
-      const { data } = await api.post('/api/lost-pets', fd, {
+      await api.post('/api/lost-pets', fd, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      onReport(data);
-      addToast('Mascota perdida reportada', 'success');
+
+      addToast('Mascota reportada correctamente', 'success');
       setForm({
+        pet_id: '',
         pet_name: '',
         description: '',
         last_seen_location: '',
+        found: false,
         photo: null
       });
-    } catch (err) {
-      console.error(err);
-      addToast('Error al reportar la mascota perdida', 'error');
-    } finally {
-      setLoading(false);
+    } catch {
+      addToast('Error al reportar la mascota', 'error');
     }
   };
 
   return (
-    <div className="card mb-4 shadow-sm">
-      <div className="card-body">
-        <h5 className="card-title">Reportar mascota perdida</h5>
-        <form onSubmit={handleSubmit}>
-          <input
-            name="pet_name"
-            className="form-control mb-2"
-            placeholder="Nombre de la mascota"
-            value={form.pet_name}
-            onChange={handleChange}
-            required
-          />
-          <input
-            name="description"
-            className="form-control mb-2"
-            placeholder="Descripción"
-            value={form.description}
-            onChange={handleChange}
-          />
-          <input
-            name="last_seen_location"
-            className="form-control mb-2"
-            placeholder="Última ubicación"
-            value={form.last_seen_location}
-            onChange={handleChange}
-          />
-          <input
-            name="photo"
-            type="file"
-            accept="image/*"
-            className="form-control mb-3"
-            onChange={handleChange}
-          />
-          <button
-            type="submit"
-            className="btn btn-danger"
-            disabled={loading}
-          >
-            {loading ? 'Publicando...' : 'Publicar'}
-          </button>
-        </form>
+    <form onSubmit={handleSubmit} className="card p-4">
+      <div className="mb-3">
+        <label className="form-label">Selecciona tu mascota</label>
+        <select 
+          name="pet_id" 
+          className="form-select"
+          value={form.pet_id}
+          onChange={handleChange}
+        >
+          <option value="">Mascota no registrada</option>
+          {pets.map(pet => (
+            <option key={pet.id} value={pet.id}>{pet.name}</option>
+          ))}
+        </select>
       </div>
-    </div>
-);
+
+      <input 
+        name="pet_name" 
+        className="form-control mb-3" 
+        placeholder="Nombre de la mascota" 
+        value={form.pet_name} 
+        onChange={handleChange} 
+        required 
+      />
+
+      <textarea 
+        name="description" 
+        className="form-control mb-3" 
+        placeholder="Descripción"
+        value={form.description} 
+        onChange={handleChange} 
+      />
+
+      <input 
+        name="last_seen_location" 
+        className="form-control mb-3" 
+        placeholder="Última ubicación vista"
+        value={form.last_seen_location} 
+        onChange={handleChange} 
+      />
+
+      <input 
+        type="file" 
+        name="photo" 
+        accept="image/*" 
+        className="form-control mb-3" 
+        onChange={handleChange} 
+      />
+
+      <button className="btn btn-primary">Reportar</button>
+    </form>
+  );
 }

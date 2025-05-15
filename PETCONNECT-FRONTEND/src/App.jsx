@@ -1,5 +1,4 @@
 // src/App.jsx
-
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   Routes,
@@ -7,7 +6,7 @@ import {
   Navigate,
   NavLink,
   useNavigate,
-  useLocation
+  useLocation,
 } from 'react-router-dom';
 import api from './api/axios';
 import Toast from './components/Toast';
@@ -15,8 +14,6 @@ import Pets from './pages/Pets';
 import Activities from './pages/Activities';
 import LostPets from './pages/LostPets';
 import LostReports from './pages/LostReports';
-// eslint-disable-next-line
-import LostPetDetail from './pages/LostPetDetail';
 import Register from './pages/Register';
 import Login from './pages/Login';
 import Profile from './pages/Profile';
@@ -29,7 +26,7 @@ export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Cuando cambia el token, lo guardamos y cargamos el perfil
+  // Cargar perfil de usuario si hay token
   useEffect(() => {
     if (token) {
       localStorage.setItem('token', token);
@@ -47,15 +44,10 @@ export default function App() {
     }
   }, [token]);
 
-  // Función para mostrar toasts
+  // Mostrar toast
   const addToast = useCallback((message, type = 'info') => {
     const id = Date.now();
-    const bg =
-      type === 'error'
-        ? '#dc3545'
-        : type === 'success'
-        ? '#28a745'
-        : '#17a2b8';
+    const bg = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#17a2b8';
     setToasts((ts) => [...ts, { id, message, bg }]);
   }, []);
 
@@ -82,66 +74,29 @@ export default function App() {
 
   return (
     <>
+      {/* Navbar */}
       {token && user && (
         <nav className="navbar navbar-expand-lg navbar-light bg-light">
           <div className="container">
-            <NavLink className="navbar-brand" to="/pets">
-              PetConnect
-            </NavLink>
-            <button
-              className="navbar-toggler"
-              type="button"
-              data-bs-toggle="collapse"
-              data-bs-target="#navbarNav"
-            >
-              <span className="navbar-toggler-icon" />
-            </button>
+            <NavLink className="navbar-brand" to="/pets">PetConnect</NavLink>
             <div className="collapse navbar-collapse" id="navbarNav">
               <ul className="navbar-nav ms-auto align-items-center">
                 <li className="nav-item">
-                  <NavLink
-                    to="/pets"
-                    className={({ isActive }) =>
-                      'nav-link' + (isActive ? ' active' : '')
-                    }
-                  >
-                    Mis Mascotas
-                  </NavLink>
+                  <NavLink to="/pets" className="nav-link">Mis Mascotas</NavLink>
                 </li>
                 <li className="nav-item">
-                  <NavLink
-                    to="/activities"
-                    className={({ isActive }) =>
-                      'nav-link' + (isActive ? ' active' : '')
-                    }
-                  >
-                    Actividades
-                  </NavLink>
+                  <NavLink to="/activities" className="nav-link">Actividades</NavLink>
                 </li>
                 <li className="nav-item">
-                  <NavLink
-                    to="/lost-pets"
-                    className={({ isActive }) =>
-                      'nav-link' + (isActive ? ' active' : '')
-                    }
-                  >
-                    Perdidas
-                  </NavLink>
+                  <NavLink to="/lost-pets" className="nav-link">Mascotas Perdidas</NavLink>
                 </li>
                 <li className="nav-item">
-                  <NavLink
-                    to="/lost-reports"
-                    className={({ isActive }) =>
-                      'nav-link' + (isActive ? ' active' : '')
-                    }
-                  >
-                    Reportes Perdidas
-                  </NavLink>
+                  <NavLink to="/lost-reports" className="nav-link">Reportes Perdidas</NavLink>
                 </li>
                 <li className="nav-item dropdown">
                   <NavLink
                     to="#"
-                    className="nav-link dropdown-toggle p-0"
+                    className="nav-link dropdown-toggle"
                     id="profileDropdown"
                     data-bs-toggle="dropdown"
                   >
@@ -152,15 +107,9 @@ export default function App() {
                       style={{ width: '40px', height: '40px', objectFit: 'cover' }}
                     />
                   </NavLink>
-                  <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
-                    <li>
-                      <NavLink className="dropdown-item" to="/profile">
-                        Mi Perfil
-                      </NavLink>
-                    </li>
-                    <li>
-                      <hr className="dropdown-divider" />
-                    </li>
+                  <ul className="dropdown-menu dropdown-menu-end">
+                    <li><NavLink className="dropdown-item" to="/profile">Mi Perfil</NavLink></li>
+                    <li><hr className="dropdown-divider" /></li>
                     <li>
                       <button className="dropdown-item" onClick={handleLogout}>
                         Logout
@@ -175,10 +124,7 @@ export default function App() {
       )}
 
       {/* Contenedor de toasts */}
-      <div
-        className="toast-container"
-        style={{ position: 'fixed', top: '1rem', right: '1rem', zIndex: 1080 }}
-      >
+      <div className="toast-container" style={{ position: 'fixed', top: '1rem', right: '1rem', zIndex: 1080 }}>
         {toasts.map((t) => (
           <Toast key={t.id} {...t} onClose={removeToast} />
         ))}
@@ -191,7 +137,7 @@ export default function App() {
             path="/register"
             element={
               <RequireGuest>
-                 <Register addToast={addToast} onLogin={setToken} />
+                <Register addToast={addToast} onLogin={setToken} />
               </RequireGuest>
             }
           />
@@ -243,17 +189,10 @@ export default function App() {
               </RequireAuth>
             }
           />
-          <Route
-            path="/"
-            element={
-              token ? <Navigate to="/pets" replace /> : <Navigate to="/login" replace />
-            }
-          />
+          <Route path="/" element={<Navigate to="/pets" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
-      
     </>
-    
   );
 }
