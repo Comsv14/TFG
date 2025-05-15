@@ -1,4 +1,3 @@
-// PETCONNECT-FRONTEND/src/components/PetForm.jsx
 import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
 
@@ -47,11 +46,13 @@ export default function PetForm({
       fd.append('age', form.age);
       if (form.photo) fd.append('photo', form.photo);
 
-      const url = petToEdit?.id
-        ? `/api/pets/${petToEdit.id}?_method=PUT`
-        : '/api/pets';
-      const { data } = await api.post(url, fd, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+      const url = petToEdit ? `/api/pets/${petToEdit.id}` : '/api/pets';
+      const method = petToEdit ? 'post' : 'post';
+      const { data } = await api[method](url, fd, {
+        headers: { 
+          'Content-Type': 'multipart/form-data',
+          'X-HTTP-Method-Override': petToEdit ? 'PUT' : 'POST'
+        }
       });
 
       onSaved(data);
@@ -106,18 +107,8 @@ export default function PetForm({
             className="form-control mb-3"
             onChange={handleChange}
           />
-          <button
-            type="submit"
-            className="btn btn-primary me-2"
-            disabled={loading}
-          >
-            {loading
-              ? petToEdit
-                ? 'Guardando...'
-                : 'Añadiendo...'
-              : petToEdit
-              ? 'Guardar cambios'
-              : 'Añadir mascota'}
+          <button type="submit" className="btn btn-primary me-2" disabled={loading}>
+            {loading ? 'Guardando...' : petToEdit ? 'Guardar cambios' : 'Añadir mascota'}
           </button>
           {petToEdit && (
             <button
@@ -131,5 +122,5 @@ export default function PetForm({
         </form>
       </div>
     </div>
-);
+  );
 }

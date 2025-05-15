@@ -2,23 +2,23 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class Pet extends Model
 {
-    use HasFactory;
+    protected $fillable = ['name', 'breed', 'age', 'user_id'];
 
-    protected $fillable = [
-        'name','breed','age','user_id'
-        // ya no guardamos 'photo' aquí
-    ];
-
-    /**
-     * Relación uno a muchos con imágenes.
-     */
     public function images()
     {
         return $this->hasMany(PetImage::class);
+    }
+
+    // Accesor para URL de la imagen
+    public function getPhotoUrlAttribute()
+    {
+        return $this->images->count()
+            ? url(Storage::url($this->images->first()->path))
+            : null;
     }
 }
