@@ -1,5 +1,5 @@
 // src/components/ActivityCard.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ActivityMap from './ActivityMap';
 import StarRater from './StarRater';
 
@@ -17,22 +17,32 @@ export default function ActivityCard({
     location,
     is_registered,
     is_finished,
-    participants_count,
-    average_rating,
+    participants_count = 0,
+    average_rating = 0,
     latitude,
     longitude,
     description
   } = activity;
 
-  const [localAverage, setLocalAverage] = useState(average_rating || 0); // ✅ Control local del promedio
+  // ✅ Control Local para Promedio y Participantes
+  const [localAverage, setLocalAverage] = useState(Number(average_rating) || 0);
+  const [localCount, setLocalCount] = useState(Number(participants_count) || 0);
+
+  useEffect(() => {
+    setLocalAverage(Number(average_rating) || 0);
+    setLocalCount(Number(participants_count) || 0);
+  }, [average_rating, participants_count]);
 
   const handleRate = async (newRating) => {
     if (onRate) {
-      await onRate(newRating); // Enviar la nueva valoración al backend
+      await onRate(newRating);
+      
+      // ✅ Actualizamos el promedio y los participantes localmente
       setLocalAverage((prevAverage) => {
-        // Calculamos el nuevo promedio localmente para que sea más fluido
-        const newAverage = (prevAverage * participants_count + newRating) / (participants_count + 1);
-        return newAverage.toFixed(1);
+        const total = prevAverage * localCount + newRating;
+        const newAverage = localCount > 0 ? total / (localCount + 1) : newRating;
+        setLocalCount((prevCount) => prevCount + 1);
+        return Number(newAverage.toFixed(2));
       });
     }
   };
@@ -41,38 +51,33 @@ export default function ActivityCard({
     <div className="card mb-3">
       <div className="card-body">
         <h5 className="card-title">{title}</h5>
-        <p className="text-muted small mb-2">
-          Propuesta por: {user?.name || '-'}
-        </p>
+        <p className="text-muted small mb-2">Propuesta por: {user?.name || '-'}</p>
         {description && <p className="card-text">{description}</p>}
-        <p className="mb-1"><strong>Inicio:</strong> {new Date(starts_at).toLocaleString()}</p>
-        {ends_at && <p className="mb-2"><strong>Fin:</strong> {new Date(ends_at).toLocaleString()}</p>}
+        <p><strong>Inicio:</strong> {new Date(starts_at).toLocaleString()}</p>
+        {ends_at && <p><strong>Fin:</strong> {new Date(ends_at).toLocaleString()}</p>}
+        {location && <p><strong>Lugar:</strong> {location}</p>}
 
-        {location && <p className="mb-2"><strong>Lugar:</strong> {location}</p>}
-
-        {/* ── MAPA ─────────────────────────────────────────── */}
+        {/* Mapa de Actividad */}
         {latitude && longitude && (
           <div className="mb-3">
             <ActivityMap latitude={latitude} longitude={longitude} />
           </div>
         )}
 
-        <p className="mb-2"><strong>Asistentes:</strong> {participants_count}</p>
+        <p className="mb-2"><strong>Asistentes:</strong> {localCount}</p>
 
-        {/* ── ESTRELLAS Y PROMEDIO ─────────────────────────── */}
-        <div className="mb-3">
-          <div className="d-flex align-items-center">
-            <StarRater
-              activityId={activity.id}
-              initialValue={average_rating}
-              readOnly={!is_finished}
-              onRate={handleRate}
-            />
-            <span className="ms-2">Promedio: {localAverage} ★</span>
-          </div>
+        {/* Estrellas y Promedio */}
+        <div className="d-flex align-items-center mb-3">
+          <StarRater
+            activityId={activity.id}
+            initialValue={localAverage}
+            readOnly={!is_finished}
+            onRate={handleRate}
+          />
+          <span className="ms-2">Promedio: {localAverage.toFixed(2)} ★</span>
         </div>
 
-        {/* ── BOTÓN DE INSCRIPCIÓN ──────────────────────────── */}
+        {/* Botón de Inscripción */}
         <button
           className={'btn ' + (is_registered ? 'btn-secondary disabled' : 'btn-primary')}
           onClick={onJoin}

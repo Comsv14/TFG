@@ -20,36 +20,33 @@ class Activity extends Model
         'starts_at',
         'ends_at',
         'finished_at',
-        'average_rating', // ✅ Añadido para guardar el promedio de calificaciones
+        'average_rating',
     ];
 
     protected $casts = [
         'starts_at'   => 'datetime',
         'ends_at'     => 'datetime',
         'finished_at' => 'datetime',
+        'average_rating' => 'decimal:2',
     ];
 
-    protected $appends = ['is_finished'];
+    protected $appends = ['is_finished', 'participants_count'];
 
     /* ---------- Relaciones ----------------------------------------- */
 
-    /** Creador de la actividad */
-    public function user() { return $this->belongsTo(User::class, 'user_id'); }
-    public function creator() { return $this->user(); } // alias
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 
-    /** Participantes (inscritos) */
     public function participants()
     {
         return $this->belongsToMany(User::class)
                     ->using(ActivityUser::class)
-                    ->withPivot(['rating', 'registered_at'])
+                    ->withPivot(['registered_at'])
                     ->withTimestamps();
     }
 
-    /** Alias para compatibilidad con el controlador antiguo */
-    public function users() { return $this->participants(); }
-
-    /** Relación de calificaciones (ratings) */
     public function ratings()
     {
         return $this->hasMany(ActivityRating::class, 'activity_id');
@@ -59,24 +56,17 @@ class Activity extends Model
 
     public function getIsFinishedAttribute(): bool
     {
-        if ($this->finished_at !== null) {
-            return true;
-        }
-        return $this->ends_at && $this->ends_at->isPast();
+        return $this->finished_at !== null || ($this->ends_at && $this->ends_at->isPast());
     }
 
-    public function checkAndMarkFinished(): void
+    public function getParticipantsCountAttribute()
     {
-        if ($this->finished_at === null && $this->ends_at && $this->ends_at->isPast()) {
-            $this->finished_at = now();
-            $this->save();
-        }
+        return $this->participants()->count();
     }
 
-    /** Recalcular promedio de calificaciones */
     public function recalculateAverageRating()
     {
-        $this->average_rating = $this->ratings()->avg('rating') ?? 0;
+        $this->average_rating = $this->ratings()->avg('rating') ?? 0.00;
         $this->save();
     }
 }
