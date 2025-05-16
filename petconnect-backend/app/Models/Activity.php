@@ -1,4 +1,5 @@
 <?php
+// app/Models/Activity.php
 
 namespace App\Models;
 
@@ -19,6 +20,7 @@ class Activity extends Model
         'starts_at',
         'ends_at',
         'finished_at',
+        'average_rating', // ✅ Añadido para guardar el promedio de calificaciones
     ];
 
     protected $casts = [
@@ -32,8 +34,8 @@ class Activity extends Model
     /* ---------- Relaciones ----------------------------------------- */
 
     /** Creador de la actividad */
-    public function user()      { return $this->belongsTo(User::class, 'user_id'); }
-    public function creator()   { return $this->user(); }           // alias
+    public function user() { return $this->belongsTo(User::class, 'user_id'); }
+    public function creator() { return $this->user(); } // alias
 
     /** Participantes (inscritos) */
     public function participants()
@@ -45,7 +47,13 @@ class Activity extends Model
     }
 
     /** Alias para compatibilidad con el controlador antiguo */
-    public function users()     { return $this->participants(); }
+    public function users() { return $this->participants(); }
+
+    /** Relación de calificaciones (ratings) */
+    public function ratings()
+    {
+        return $this->hasMany(ActivityRating::class, 'activity_id');
+    }
 
     /* ---------- Atributos & helpers -------------------------------- */
 
@@ -63,5 +71,12 @@ class Activity extends Model
             $this->finished_at = now();
             $this->save();
         }
+    }
+
+    /** Recalcular promedio de calificaciones */
+    public function recalculateAverageRating()
+    {
+        $this->average_rating = $this->ratings()->avg('rating') ?? 0;
+        $this->save();
     }
 }

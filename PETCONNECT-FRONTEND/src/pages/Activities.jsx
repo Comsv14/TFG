@@ -1,3 +1,4 @@
+// src/pages/Activities.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import api from '../api/axios';
 import ActivityCard from '../components/ActivityCard';
@@ -5,11 +6,11 @@ import ActivityForm from '../components/ActivityForm';
 
 export default function Activities({ addToast }) {
   const [activities, setActivities] = useState([]);
-  const [tab, setTab] = useState('comunidad');    // 'comunidad' | 'inscritas'
+  const [tab, setTab] = useState('comunidad');
   const [search, setSearch] = useState('');
-  const [sort, setSort] = useState('fecha_asc');   // 'fecha_asc' | 'fecha_desc' | 'titulo'
+  const [sort, setSort] = useState('fecha_asc');
 
-  // Función para cargar
+  // ✅ Cargar actividades desde el servidor
   const cargarActividades = async () => {
     try {
       const { data } = await api.get('/api/activities');
@@ -24,17 +25,17 @@ export default function Activities({ addToast }) {
     cargarActividades();
   }, []);
 
-  // Filtrar/buscar/ordenar
+  // ✅ Filtrar/buscar/ordenar
   const filtered = useMemo(() => {
     let list = [...activities];
 
     if (tab === 'inscritas') {
-      list = list.filter(a => a.is_registered);
+      list = list.filter((a) => a.is_registered);
     }
 
     if (search.trim()) {
       const q = search.toLowerCase();
-      list = list.filter(a =>
+      list = list.filter((a) =>
         a.title.toLowerCase().includes(q) ||
         (a.user?.name || '').toLowerCase().includes(q)
       );
@@ -44,13 +45,14 @@ export default function Activities({ addToast }) {
       if (sort === 'fecha_asc') return new Date(a.starts_at) - new Date(b.starts_at);
       if (sort === 'fecha_desc') return new Date(b.starts_at) - new Date(a.starts_at);
       if (sort === 'titulo') return a.title.localeCompare(b.title);
+      if (sort === 'valoracion') return b.average_rating - a.average_rating;
       return 0;
     });
 
     return list;
   }, [activities, tab, search, sort]);
 
-  // Apuntarse
+  // ✅ Inscribirse en una actividad
   const handleJoin = async (id) => {
     try {
       await api.post(`/api/activities/${id}/register`);
@@ -59,6 +61,21 @@ export default function Activities({ addToast }) {
     } catch (err) {
       console.error(err);
       addToast('Error al inscribirse', 'error');
+    }
+  };
+
+  // ✅ Valorar una actividad
+  const handleRate = async (id, rating) => {
+    try {
+      await api.post('/api/activity-ratings', {
+        activity_id: id,
+        rating,
+      });
+      addToast('Gracias por tu valoración', 'success');
+      cargarActividades(); // Actualizar la lista después de valorar
+    } catch (err) {
+      console.error(err);
+      addToast('Error al enviar la valoración', 'error');
     }
   };
 
@@ -107,18 +124,19 @@ export default function Activities({ addToast }) {
             className="form-control"
             placeholder="Buscar por título o creador…"
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
           />
         </div>
         <div className="col-md-3">
           <select
             className="form-select"
             value={sort}
-            onChange={e => setSort(e.target.value)}
+            onChange={(e) => setSort(e.target.value)}
           >
             <option value="fecha_asc">Fecha ↑</option>
             <option value="fecha_desc">Fecha ↓</option>
             <option value="titulo">Título</option>
+            <option value="valoracion">Mejor Valoradas</option>
           </select>
         </div>
       </div>
@@ -126,11 +144,12 @@ export default function Activities({ addToast }) {
       {/* Listado */}
       <div className="row">
         {filtered.length > 0 ? (
-          filtered.map(act => (
+          filtered.map((act) => (
             <div className="col-md-6 mb-3" key={act.id}>
               <ActivityCard
                 activity={act}
                 onJoin={() => handleJoin(act.id)}
+                onRate={(rating) => handleRate(act.id, rating)}
                 addToast={addToast}
               />
             </div>

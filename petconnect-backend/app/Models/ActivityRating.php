@@ -1,4 +1,5 @@
 <?php
+// app/Models/ActivityRating.php
 
 namespace App\Models;
 
@@ -21,3 +22,4 @@ class ActivityRating extends Model
         return $this->belongsTo(User::class);
     }
 }
+

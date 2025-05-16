@@ -78,6 +78,7 @@ class LostReportController extends Controller
 
         $report->load(['pet', 'user']);
         return response()->json($report, 201);
+        event(new NewLostPetReport($report));
     }
 
     /**

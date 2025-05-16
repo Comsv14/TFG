@@ -50,7 +50,7 @@ export default function LostReports({ addToast, user }) {
         setForm((prev) => ({
           ...prev,
           pet_name: selectedPet.name,
-          photo: selectedPet.photo,
+          photo: selectedPet.photo ? selectedPet.photo : null,
         }));
       }
     }
@@ -138,6 +138,17 @@ export default function LostReports({ addToast, user }) {
           </div>
         )}
 
+        {/* Foto (solo se muestra si es mascota perdida y tiene foto) */}
+        {form.type === 'lost' && form.photo && (
+          <div className="mb-3 text-center">
+            <img
+              src={form.photo}
+              alt="Foto de la mascota"
+              style={{ maxHeight: 150, objectFit: 'cover' }}
+            />
+          </div>
+        )}
+
         {/* Descripción */}
         <div className="mb-3">
           <label className="form-label">Descripción del Reporte</label>
@@ -168,7 +179,7 @@ export default function LostReports({ addToast, user }) {
           <MapPicker latitude={form.latitude} longitude={form.longitude} onChange={handleMap} />
         </div>
 
-        {/* Foto */}
+        {/* Foto personalizada (solo si es encontrada) */}
         {form.type === 'found' && (
           <div className="mb-3">
             <label className="form-label">Foto (Opcional)</label>
@@ -179,38 +190,6 @@ export default function LostReports({ addToast, user }) {
         {/* Botón Enviar */}
         <button className="btn btn-primary w-100 mt-3">Enviar Reporte</button>
       </form>
-
-      {/* Listado de reportes */}
-      <h2 className="mb-4">Reportes Existentes</h2>
-      <div className="row">
-        {reports.length === 0 ? (
-          <p className="text-center text-muted">No hay reportes de mascotas perdidas.</p>
-        ) : (
-          reports.map((report) => (
-            <div key={report.id} className="col-md-6 mb-4">
-              <div className="card">
-                {report.photo && (
-                  <img src={report.photo} alt="Mascota Reportada" className="card-img-top" />
-                )}
-                <div className="card-body">
-                  <h5>{report.pet_name || 'Mascota Desconocida'}</h5>
-                  <p>{report.comment}</p>
-                  <p>
-                    <strong>Fecha del Incidente:</strong>{' '}
-                    {new Date(report.happened_at).toLocaleString()}
-                  </p>
-                  <p>
-                    <strong>Ubicación:</strong>{' '}
-                    {report.latitude && report.longitude
-                      ? `${report.latitude.toFixed(5)}, ${report.longitude.toFixed(5)}`
-                      : 'No especificada'}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
     </Fragment>
   );
 }

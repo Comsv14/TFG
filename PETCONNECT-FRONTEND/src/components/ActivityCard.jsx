@@ -1,13 +1,13 @@
 // src/components/ActivityCard.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import ActivityMap from './ActivityMap';
 import StarRater from './StarRater';
 
 export default function ActivityCard({
   activity,
   onJoin,
-  onRate, 
-  addToast 
+  onRate,
+  addToast
 }) {
   const {
     title,
@@ -24,8 +24,17 @@ export default function ActivityCard({
     description
   } = activity;
 
-  const handleRate = (newRating) => {
-    if (onRate) onRate(newRating);
+  const [localAverage, setLocalAverage] = useState(average_rating || 0); // ✅ Control local del promedio
+
+  const handleRate = async (newRating) => {
+    if (onRate) {
+      await onRate(newRating); // Enviar la nueva valoración al backend
+      setLocalAverage((prevAverage) => {
+        // Calculamos el nuevo promedio localmente para que sea más fluido
+        const newAverage = (prevAverage * participants_count + newRating) / (participants_count + 1);
+        return newAverage.toFixed(1);
+      });
+    }
   };
 
   return (
@@ -50,14 +59,17 @@ export default function ActivityCard({
 
         <p className="mb-2"><strong>Asistentes:</strong> {participants_count}</p>
 
-        {/* ── ESTRELLAS ─────────────────────────────────────── */}
+        {/* ── ESTRELLAS Y PROMEDIO ─────────────────────────── */}
         <div className="mb-3">
-          <StarRater
-            activityId={activity.id}
-            initialValue={average_rating}
-            readOnly={!is_finished}
-            onRate={handleRate}
-          />
+          <div className="d-flex align-items-center">
+            <StarRater
+              activityId={activity.id}
+              initialValue={average_rating}
+              readOnly={!is_finished}
+              onRate={handleRate}
+            />
+            <span className="ms-2">Promedio: {localAverage} ★</span>
+          </div>
         </div>
 
         {/* ── BOTÓN DE INSCRIPCIÓN ──────────────────────────── */}

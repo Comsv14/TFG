@@ -7,8 +7,9 @@ use App\Http\Controllers\Api\ActivityController;
 use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\LostPetController;
 use App\Http\Controllers\Api\ProfileController;
-use App\Http\Controllers\ActivityRatingController;
+use App\Http\Controllers\Api\ActivityRatingController;
 use App\Http\Controllers\Api\LostReportController;
+use App\Http\Controllers\Api\NotificationController;
 
 // Rutas públicas
 Route::post('register', [AuthController::class, 'register']);
@@ -25,12 +26,19 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('profile', [ProfileController::class, 'show']);
     Route::post('profile', [ProfileController::class, 'update']);
 
+    // Notificaciones
+    Route::post('/activity-ratings', [ActivityRatingController::class, 'store']);
+    Route::get('/activity-ratings/{activity_id}/average', [ActivityRatingController::class, 'average']);
+     Route::get('/notifications', [NotificationController::class, 'index']);
+     Route::post('/notifications/mark-as-read', [NotificationController::class, 'markAsRead']);
+
     /* ---------- ACTIVITIES ------------------------------ */
     Route::apiResource('activities', ActivityController::class);
     Route::post('activities/{activity}/join', [ActivityController::class, 'join']);
     Route::post('activities/{activity}/rate', [ActivityController::class, 'rate']);
 
     Route::post('/activity-ratings', [ActivityRatingController::class, 'store']);
+    Route::get('/activity-ratings/{activity_id}/average', [ActivityRatingController::class, 'average']);
     Route::get('/activity-ratings/{activity_id}/average', [ActivityRatingController::class, 'average']);
 
     // Mascotas

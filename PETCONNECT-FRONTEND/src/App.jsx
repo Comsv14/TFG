@@ -23,10 +23,11 @@ export default function App() {
   const [toasts, setToasts] = useState([]);
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [user, setUser] = useState(null);
+  const [notifications, setNotifications] = useState([]); // ✅ Notificaciones
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Cargar perfil de usuario si hay token
+  // ✅ Cargar perfil y notificaciones
   useEffect(() => {
     if (token) {
       localStorage.setItem('token', token);
@@ -34,6 +35,7 @@ export default function App() {
         try {
           const { data } = await api.get('/api/profile');
           setUser(data);
+          fetchNotifications(); // ✅ Cargar notificaciones
         } catch (e) {
           console.error(e);
         }
@@ -44,19 +46,43 @@ export default function App() {
     }
   }, [token]);
 
-  // Mostrar toast
+  // ✅ Obtener notificaciones
+  const fetchNotifications = async () => {
+    try {
+      const { data } = await api.get('/api/notifications');
+      setNotifications(data);
+    } catch (e) {
+      console.error('Error cargando notificaciones:', e);
+    }
+  };
+
+  // ✅ Marcar notificación como leída
+  const markAsRead = async (notificationId) => {
+    try {
+      await api.post(`/api/notifications/${notificationId}/mark-as-read`);
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.id === notificationId ? { ...n, read_at: new Date() } : n
+        )
+      );
+    } catch (e) {
+      console.error('Error marcando notificación como leída:', e);
+    }
+  };
+
+  // ✅ Mostrar toast
   const addToast = useCallback((message, type = 'info') => {
     const id = Date.now();
     const bg = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#17a2b8';
     setToasts((ts) => [...ts, { id, message, bg }]);
   }, []);
 
-  // Quitar toast
+  // ✅ Quitar toast
   const removeToast = useCallback((id) => {
     setToasts((ts) => ts.filter((t) => t.id !== id));
   }, []);
 
-  // Logout
+  // ✅ Logout
   const handleLogout = async () => {
     try {
       await api.post('/api/logout');
@@ -66,7 +92,7 @@ export default function App() {
     navigate('/login', { replace: true });
   };
 
-  // Componentes para rutas protegidas / guests
+  // ✅ Rutas protegidas
   const RequireAuth = ({ children }) =>
     token ? children : <Navigate to="/login" replace state={{ from: location }} />;
   const RequireGuest = ({ children }) =>
@@ -93,13 +119,44 @@ export default function App() {
                 <li className="nav-item">
                   <NavLink to="/lost-reports" className="nav-link">Reportes Perdidas</NavLink>
                 </li>
+
+                {/* ✅ Notificaciones */}
                 <li className="nav-item dropdown">
-                  <NavLink
-                    to="#"
-                    className="nav-link dropdown-toggle"
-                    id="profileDropdown"
+                  <button
+                    className="btn btn-outline-secondary position-relative"
+                    type="button"
                     data-bs-toggle="dropdown"
                   >
+                    🔔
+                    {notifications.filter(n => !n.read_at).length > 0 && (
+                      <span className="badge bg-danger position-absolute top-0 start-100 translate-middle">
+                        {notifications.filter(n => !n.read_at).length}
+                      </span>
+                    )}
+                  </button>
+                  <ul className="dropdown-menu dropdown-menu-end">
+                    {notifications.length === 0 ? (
+                      <li className="dropdown-item text-muted">Sin notificaciones</li>
+                    ) : (
+                      notifications.map(n => (
+                        <li key={n.id} className="dropdown-item">
+                          {n.message}
+                          {!n.read_at && (
+                            <button
+                              className="btn btn-sm btn-link text-primary"
+                              onClick={() => markAsRead(n.id)}
+                            >
+                              Marcar como leída
+                            </button>
+                          )}
+                        </li>
+                      ))
+                    )}
+                  </ul>
+                </li>
+
+                <li className="nav-item dropdown">
+                  <NavLink to="#" className="nav-link dropdown-toggle" id="profileDropdown" data-bs-toggle="dropdown">
                     <img
                       src={user.avatar_url || '/default-avatar.png'}
                       alt="avatar"
@@ -110,11 +167,7 @@ export default function App() {
                   <ul className="dropdown-menu dropdown-menu-end">
                     <li><NavLink className="dropdown-item" to="/profile">Mi Perfil</NavLink></li>
                     <li><hr className="dropdown-divider" /></li>
-                    <li>
-                      <button className="dropdown-item" onClick={handleLogout}>
-                        Logout
-                      </button>
-                    </li>
+                    <li><button className="dropdown-item" onClick={handleLogout}>Logout</button></li>
                   </ul>
                 </li>
               </ul>
@@ -133,65 +186,66 @@ export default function App() {
       {/* Rutas */}
       <div className="container mt-4">
         <Routes>
-          <Route
-            path="/register"
-            element={
-              <RequireGuest>
-                <Register addToast={addToast} onLogin={setToken} />
-              </RequireGuest>
-            }
-          />
-          <Route
-            path="/login"
-            element={
-              <RequireGuest>
-                <Login addToast={addToast} onLogin={setToken} />
-              </RequireGuest>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <RequireAuth>
-                <Profile addToast={addToast} user={user} />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/pets"
-            element={
-              <RequireAuth>
-                <Pets addToast={addToast} user={user} />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/activities"
-            element={
-              <RequireAuth>
-                <Activities addToast={addToast} user={user} />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/lost-pets"
-            element={
-              <RequireAuth>
-                <LostPets addToast={addToast} user={user} />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/lost-reports"
-            element={
-              <RequireAuth>
-                <LostReports addToast={addToast} user={user} />
-              </RequireAuth>
-            }
-          />
-          <Route path="/" element={<Navigate to="/pets" replace />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+  <Route
+    path="/register"
+    element={
+      <RequireGuest>
+        <Register addToast={addToast} onLogin={setToken} />
+      </RequireGuest>
+    }
+  />
+  <Route
+    path="/login"
+    element={
+      <RequireGuest>
+        <Login addToast={addToast} onLogin={setToken} />
+      </RequireGuest>
+    }
+  />
+  <Route
+    path="/profile"
+    element={
+      <RequireAuth>
+        <Profile addToast={addToast} user={user} />
+      </RequireAuth>
+    }
+  />
+  <Route
+    path="/pets"
+    element={
+      <RequireAuth>
+        <Pets addToast={addToast} user={user} />
+      </RequireAuth>
+    }
+  />
+  <Route
+    path="/activities"
+    element={
+      <RequireAuth>
+        <Activities addToast={addToast} user={user} />
+      </RequireAuth>
+    }
+  />
+  <Route
+    path="/lost-pets"
+    element={
+      <RequireAuth>
+        <LostPets addToast={addToast} user={user} />
+      </RequireAuth>
+    }
+  />
+  <Route
+    path="/lost-reports"
+    element={
+      <RequireAuth>
+        <LostReports addToast={addToast} user={user} />
+      </RequireAuth>
+    }
+  />
+  {/* ✅ Ajuste aquí para que inicie en login */}
+  <Route path="/" element={<Navigate to="/login" replace />} />
+  <Route path="*" element={<Navigate to="/login" replace />} />
+</Routes>
       </div>
     </>
   );

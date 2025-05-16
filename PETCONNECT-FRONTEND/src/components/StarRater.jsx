@@ -1,10 +1,15 @@
-import React, { useState } from 'react';
+// src/components/StarRater.jsx
+import React, { useState, useEffect } from 'react';
 import ReactStars from 'react-rating-stars-component';
-import api from '../api/axios'; // Asegúrate de que esta ruta sea correcta
+import api from '../api/axios';
 
 const StarRater = ({ activityId, initialValue = 0, readOnly = false, onRate }) => {
-  const [rating, setRating] = useState(initialValue);
+  const [rating, setRating] = useState(Number(initialValue));
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setRating(Number(initialValue));
+  }, [initialValue]);
 
   const handleRatingChange = (newRating) => {
     setRating(newRating);
@@ -37,13 +42,15 @@ const StarRater = ({ activityId, initialValue = 0, readOnly = false, onRate }) =
         activeColor="#ffd700"
         edit={!readOnly}
       />
-      <button
-        className="btn btn-primary mt-2"
-        onClick={handleSubmit}
-        disabled={readOnly || loading}
-      >
-        {loading ? 'Enviando...' : 'Enviar valoración'}
-      </button>
+      {!readOnly && (
+        <button
+          className="btn btn-primary mt-2"
+          onClick={handleSubmit}
+          disabled={loading}
+        >
+          {loading ? 'Enviando...' : 'Enviar valoración'}
+        </button>
+      )}
     </div>
   );
 };
