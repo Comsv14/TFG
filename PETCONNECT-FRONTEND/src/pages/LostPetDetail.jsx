@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../api/axios';
+import LostPetComments from '../components/LostPetComments';
 
 export default function LostPetDetail({ addToast }) {
   const { id } = useParams();
@@ -10,7 +11,7 @@ export default function LostPetDetail({ addToast }) {
     (async () => {
       try {
         const res = await api.get(`/api/lost-pets/${id}`);
-        setLost(res.data.data ?? res.data);
+        setLost(res.data);
       } catch {
         addToast('No se pudo cargar el reporte', 'error');
       }
@@ -35,16 +36,17 @@ export default function LostPetDetail({ addToast }) {
           />
         )}
         <div className="card-body">
-          <h3 className="card-title">{lost.pet.name}</h3>
+          <h3 className="card-title">{lost.pet_name ?? 'Mascota'}</h3>
           <p className="card-text">
-            <strong>Raza:</strong> {lost.pet.breed} <br />
-            <strong>Edad:</strong> {lost.pet.age} años<br />
-            <strong>Ubicación:</strong> {lost.location ?? '—'} <br />
-            <strong>Comentario:</strong> {lost.comment ?? '—'} <br />
-            <strong>Reportado:</strong> {lost.posted_at}
+            <strong>Descripción:</strong> {lost.description ?? '—'}<br />
+            <strong>Ubicación:</strong> {lost.last_seen_location ?? '—'}<br />
+            <strong>Fecha:</strong> {lost.posted_at}
           </p>
         </div>
       </div>
+
+      {/* Comentarios de la mascota perdida */}
+      <LostPetComments lostReportId={id} addToast={addToast} />
     </div>
   );
 }

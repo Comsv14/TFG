@@ -10,6 +10,10 @@ use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ActivityRatingController;
 use App\Http\Controllers\Api\LostReportController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\LostReportCommentController;
+use App\Http\Controllers\Api\LostPetCommentController;
+
+
 
 // Rutas públicas
 Route::post('register', [AuthController::class, 'register']);
@@ -57,4 +61,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('lost-reports', [LostReportController::class, 'store']);
     Route::post('lost-reports/{lost_report}/toggle-resolved', [LostReportController::class, 'toggleResolved']);
     Route::delete('lost-reports/{lost_report}', [LostReportController::class, 'destroy']);
+    
+    // Comentarios en mascotas perdidas
+    Route::get('lost-pets/{lost_pet}/comments', [LostPetCommentController::class, 'index']);
+    Route::post('lost-pets/{lost_pet}/comments', [LostPetCommentController::class, 'store']);
+    Route::get('lost-reports/{lost_report}/comments', [LostReportCommentController::class, 'index']);
+    Route::post('lost-reports/{lost_report}/comments', [LostReportCommentController::class, 'store']);
+
 });

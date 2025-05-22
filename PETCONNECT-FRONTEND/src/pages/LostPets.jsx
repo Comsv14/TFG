@@ -1,10 +1,10 @@
+// src/pages/LostPets.jsx
 import React, { useState, useEffect, useMemo, useCallback, Fragment } from 'react';
-import { Link } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import L from 'leaflet';
 import api from '../api/axios';
+import LostPetComments from '../components/LostPetComments';
 
-/* Leaflet default icon fix */
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
@@ -12,13 +12,11 @@ L.Icon.Default.mergeOptions({
   shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
 });
 
-/* Component */
 export default function LostPets({ addToast, user }) {
   const [lostPets, setLostPets] = useState([]);
-  const [tab, setTab] = useState('lost'); // 'lost' | 'found'
+  const [tab, setTab] = useState('lost');
   const [expandedId, setExpandedId] = useState(null);
 
-  /* Fetch lost pets */
   const fetchLostPets = useCallback(async () => {
     try {
       const res = await api.get('/api/lost-reports');
@@ -32,7 +30,6 @@ export default function LostPets({ addToast, user }) {
     fetchLostPets();
   }, [fetchLostPets]);
 
-  /* Mark as found (only for owner) */
   const markAsFound = async (id) => {
     try {
       await api.post(`/api/lost-reports/${id}/toggle-resolved`);
@@ -43,20 +40,16 @@ export default function LostPets({ addToast, user }) {
     }
   };
 
-  /* Filtered list */
   const filtered = useMemo(() => {
     return lostPets.filter(p => (tab === 'lost' ? !p.resolved : p.resolved));
   }, [lostPets, tab]);
 
-  /* Toggle details */
-  const toggleDetails = (id) =>
-    setExpandedId(expandedId === id ? null : id);
+  const toggleDetails = (id) => setExpandedId(expandedId === id ? null : id);
 
   return (
     <Fragment>
       <h1 className="mb-4">Mascotas Perdidas y Encontradas</h1>
 
-      {/* Tabs */}
       <div className="mb-3">
         <button
           className={`btn ${tab === 'lost' ? 'btn-primary' : 'btn-outline-primary'}`}
@@ -72,7 +65,6 @@ export default function LostPets({ addToast, user }) {
         </button>
       </div>
 
-      {/* List of Lost Pets */}
       <div className="row">
         {filtered.length === 0 ? (
           <p className="text-muted">No hay mascotas en esta categoría.</p>
@@ -81,7 +73,12 @@ export default function LostPets({ addToast, user }) {
             <div key={p.id} className="col-md-6 mb-4">
               <div className="card">
                 {p.photo && (
-                  <img src={p.photo} alt={p.pet_name || 'Mascota'} className="card-img-top" style={{ height: 200, objectFit: 'cover' }} />
+                  <img
+                    src={p.photo}
+                    alt={p.pet_name || 'Mascota'}
+                    className="card-img-top"
+                    style={{ height: 200, objectFit: 'cover' }}
+                  />
                 )}
                 <div className="card-body">
                   <h5 className="card-title">
@@ -122,7 +119,6 @@ export default function LostPets({ addToast, user }) {
                         <strong>Comentario:</strong> {p.comment}
                       </p>
 
-                      {/* Mark as found button (only owner) */}
                       {user?.id === p.user?.id && !p.resolved && (
                         <button
                           className="btn btn-success mt-3"
@@ -131,6 +127,9 @@ export default function LostPets({ addToast, user }) {
                           Marcar como encontrada
                         </button>
                       )}
+
+                      {/* ✅ COMENTARIOS: p.id es el ID de LostPetReport */}
+                      <LostPetComments lostReportId={p.id} addToast={addToast} />
                     </div>
                   )}
                 </div>

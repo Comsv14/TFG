@@ -57,4 +57,8 @@ class LostPet extends Model
     {
         return $query->where('found', true);
     }
+    public function comments()
+{
+    return $this->hasMany(LostPetComment::class);
+}
 }
