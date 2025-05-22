@@ -109,4 +109,13 @@ class PetController extends Controller
         $pet->delete();
         return response()->noContent();
     }
+     public function toggleWalk(Pet $pet)
+    {
+        $this->authorize('update', $pet); // Quita esta línea si no usas políticas
+
+        $pet->is_walking = !$pet->is_walking;
+        $pet->save();
+
+        return response()->json(['is_walking' => $pet->is_walking]);
+    }
 }

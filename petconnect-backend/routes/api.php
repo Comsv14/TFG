@@ -49,6 +49,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Mascotas
     Route::apiResource('pets', PetController::class);
+    Route::patch('pets/{pet}/toggle-walk', [PetController::class, 'toggleWalk']);
 
     // Mascotas perdidas
     Route::apiResource('lost-pets', LostPetController::class)->except(['update']);

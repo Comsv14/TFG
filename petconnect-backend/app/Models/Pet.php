@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Storage;
 
 class Pet extends Model
 {
-    protected $fillable = ['name', 'breed', 'age', 'user_id'];
+    protected $fillable = ['name', 'breed', 'age', 'user_id', 'is_walking'];
 
     /**
      * Relación: Una mascota puede tener muchas imágenes
