@@ -2,42 +2,35 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
 use App\Models\Comment;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 
 class CommentController extends Controller
 {
-    public function index(Request $request)
+    public function index($activityId)
     {
-        $request->validate([
-            'activity_id' => 'required|exists:activities,id'
-        ]);
-
-        $comments = Comment::with('user')
-            ->where('activity_id', $request->activity_id)
-            ->orderBy('created_at','desc')
+        $comments = Comment::where('activity_id', $activityId)
+            ->with('user:id,name')
+            ->latest()
             ->get();
 
         return response()->json($comments);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, $activityId)
     {
-        $data = $request->validate([
-            'activity_id' => 'required|exists:activities,id',
-            'body'        => 'required|string',
+        $request->validate([
+            'body' => 'required|string|max:1000',
         ]);
 
-        $comment = $request->user()->comments()->create($data);
+        $comment = Comment::create([
+            'user_id' => auth()->id(),
+            'activity_id' => $activityId,
+            'body' => $request->body,
+        ]);
 
-        return response()->json($comment->load('user'), 201);
-    }
-
-    public function destroy(Comment $comment)
-    {
-        $this->authorize('delete', $comment);
-        $comment->delete();
-        return response()->json(null, 204);
+        return response()->json($comment->load('user'));
     }
 }
+

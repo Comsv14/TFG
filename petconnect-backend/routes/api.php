@@ -29,43 +29,32 @@ Route::middleware('auth:sanctum')->group(function () {
     // Notificaciones
     Route::post('/activity-ratings', [ActivityRatingController::class, 'store']);
     Route::get('/activity-ratings/{activity_id}/average', [ActivityRatingController::class, 'average']);
-     Route::get('/notifications', [NotificationController::class, 'index']);
-     Route::post('/notifications/mark-as-read', [NotificationController::class, 'markAsRead']);
-
-    /* ---------- ACTIVITIES ------------------------------ */
-    Route::apiResource('activities', ActivityController::class);
-    Route::post('activities/{activity}/join', [ActivityController::class, 'join']);
-    Route::post('activities/{activity}/rate', [ActivityController::class, 'rate']);
-
-    Route::post('/activity-ratings', [ActivityRatingController::class, 'store']);
-    Route::get('/activity-ratings/{activity_id}/average', [ActivityRatingController::class, 'average']);
-    Route::get('/activity-ratings/{activity_id}/average', [ActivityRatingController::class, 'average']);
-
-    // Mascotas
-    Route::apiResource('pets', PetController::class);
-    // En api.php
-    Route::post('lost-reports/{lost_report}/toggle-resolved', [LostReportController::class, 'toggleResolved']);
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/mark-as-read', [NotificationController::class, 'markAsRead']);
 
     // Actividades
     Route::apiResource('activities', ActivityController::class);
+    Route::post('activities/{activity}/join', [ActivityController::class, 'join']);
+    Route::post('activities/{activity}/rate', [ActivityController::class, 'rate']);
     Route::post('activities/{activity}/register', [ActivityController::class, 'register']);
 
-    // Comentarios
-    Route::get('comments',    [CommentController::class, 'index']);
-    Route::post('comments',   [CommentController::class, 'store']);
+    // Comentarios relacionados con actividades
+    Route::get('activities/{activity}/comments', [CommentController::class, 'index']);
+    Route::post('activities/{activity}/comments', [CommentController::class, 'store']);
     Route::delete('comments/{comment}', [CommentController::class, 'destroy']);
+
+    // Mascotas
+    Route::apiResource('pets', PetController::class);
 
     // Mascotas perdidas
     Route::apiResource('lost-pets', LostPetController::class)->except(['update']);
     Route::put('lost-pets/{lost_pet}', [LostPetController::class, 'update']);
     Route::post('lost-pets/{lost_pet}/sightings', [LostPetController::class, 'reportSighting']);
-    /* NUEVA ==> */ Route::get('lost-pets/{lost_pet}', [LostPetController::class, 'show']);
-    
+    Route::get('lost-pets/{lost_pet}', [LostPetController::class, 'show']);
 
     // Reportes de pérdida
-    Route::get('lost-reports',                       [LostReportController::class, 'index']);
-    Route::post('lost-reports',                      [LostReportController::class, 'store']);
-    Route::post('lost-reports/{lost_report}/toggle-resolved',
-               [LostReportController::class, 'toggleResolved']);
-    Route::delete('lost-reports/{lost_report}',      [LostReportController::class, 'destroy']);
+    Route::get('lost-reports', [LostReportController::class, 'index']);
+    Route::post('lost-reports', [LostReportController::class, 'store']);
+    Route::post('lost-reports/{lost_report}/toggle-resolved', [LostReportController::class, 'toggleResolved']);
+    Route::delete('lost-reports/{lost_report}', [LostReportController::class, 'destroy']);
 });

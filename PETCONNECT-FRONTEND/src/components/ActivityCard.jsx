@@ -1,90 +1,97 @@
 // src/components/ActivityCard.jsx
-import React, { useState, useEffect } from 'react';
-import ActivityMap from './ActivityMap';
-import StarRater from './StarRater';
+import { useEffect, useState } from 'react';
+import api from '../api/axios';
 
-export default function ActivityCard({
-  activity,
-  onJoin,
-  onRate,
-  addToast
-}) {
-  const {
-    title,
-    user,
-    starts_at,
-    ends_at,
-    location,
-    is_registered,
-    is_finished,
-    participants_count = 0,
-    average_rating = 0,
-    latitude,
-    longitude,
-    description
-  } = activity;
+export default function ActivityCard({ activity, onJoin, onRate, addToast }) {
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState('');
 
-  // ✅ Control Local para Promedio y Participantes
-  const [localAverage, setLocalAverage] = useState(Number(average_rating) || 0);
-  const [localCount, setLocalCount] = useState(Number(participants_count) || 0);
-
-  useEffect(() => {
-    setLocalAverage(Number(average_rating) || 0);
-    setLocalCount(Number(participants_count) || 0);
-  }, [average_rating, participants_count]);
-
-  const handleRate = async (newRating) => {
-    if (onRate) {
-      await onRate(newRating);
-      
-      // ✅ Actualizamos el promedio y los participantes localmente
-      setLocalAverage((prevAverage) => {
-        const total = prevAverage * localCount + newRating;
-        const newAverage = localCount > 0 ? total / (localCount + 1) : newRating;
-        setLocalCount((prevCount) => prevCount + 1);
-        return Number(newAverage.toFixed(2));
-      });
+  const loadComments = async () => {
+    try {
+      const res = await api.get(`/api/activities/${activity.id}/comments`);
+      setComments(res.data);
+    } catch {
+      addToast('Error al cargar comentarios', 'error');
     }
   };
 
+  const handleCommentSubmit = async (e) => {
+    e.preventDefault();
+    if (!newComment.trim()) return;
+
+    try {
+      const res = await api.post(`/api/activities/${activity.id}/comments`, {
+        body: newComment,
+      });
+      setComments([res.data, ...comments]);
+      setNewComment('');
+    } catch {
+      addToast('Error al enviar comentario', 'error');
+    }
+  };
+
+  useEffect(() => {
+    loadComments();
+  }, []);
+
   return (
-    <div className="card mb-3">
-      <div className="card-body">
-        <h5 className="card-title">{title}</h5>
-        <p className="text-muted small mb-2">Propuesta por: {user?.name || '-'}</p>
-        {description && <p className="card-text">{description}</p>}
-        <p><strong>Inicio:</strong> {new Date(starts_at).toLocaleString()}</p>
-        {ends_at && <p><strong>Fin:</strong> {new Date(ends_at).toLocaleString()}</p>}
-        {location && <p><strong>Lugar:</strong> {location}</p>}
+    <div className="card p-3">
+      <h5>{activity.title}</h5>
+      <p>{activity.description}</p>
+      <p>
+        <strong>Ubicación:</strong> {activity.location}
+      </p>
+      <p>
+        <strong>Fecha:</strong> {new Date(activity.starts_at).toLocaleString()}
+      </p>
 
-        {/* Mapa de Actividad */}
-        {latitude && longitude && (
-          <div className="mb-3">
-            <ActivityMap latitude={latitude} longitude={longitude} />
-          </div>
-        )}
-
-        <p className="mb-2"><strong>Asistentes:</strong> {localCount}</p>
-
-        {/* Estrellas y Promedio */}
-        <div className="d-flex align-items-center mb-3">
-          <StarRater
-            activityId={activity.id}
-            initialValue={localAverage}
-            readOnly={!is_finished}
-            onRate={handleRate}
-          />
-          <span className="ms-2">Promedio: {localAverage.toFixed(2)} ★</span>
-        </div>
-
-        {/* Botón de Inscripción */}
-        <button
-          className={'btn ' + (is_registered ? 'btn-secondary disabled' : 'btn-primary')}
-          onClick={onJoin}
-          disabled={is_registered}
-        >
-          {is_registered ? 'Ya inscrito' : 'Apuntarse'}
+      {!activity.is_finished && (
+        <button onClick={onJoin} className="btn btn-outline-primary btn-sm me-2">
+          Inscribirse
         </button>
+      )}
+
+      {activity.is_finished && (
+        <div className="mt-2">
+          <strong>Valorar:</strong>{' '}
+          {[1, 2, 3, 4, 5].map((val) => (
+            <button
+              key={val}
+              onClick={() => onRate(val)}
+              className="btn btn-sm btn-warning me-1"
+            >
+              {val} ⭐
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="mt-4">
+        <h6>Comentarios</h6>
+        <form onSubmit={handleCommentSubmit}>
+          <div className="input-group mb-2">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Escribe un comentario…"
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+            />
+            <button className="btn btn-primary" type="submit">Enviar</button>
+          </div>
+        </form>
+
+        {comments.length > 0 ? (
+          <ul className="list-group">
+            {comments.map((c) => (
+              <li key={c.id} className="list-group-item">
+                <strong>{c.user.name}:</strong> {c.body}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-muted">Sin comentarios todavía.</p>
+        )}
       </div>
     </div>
   );

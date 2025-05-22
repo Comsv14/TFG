@@ -51,6 +51,10 @@ class Activity extends Model
     {
         return $this->hasMany(ActivityRating::class, 'activity_id');
     }
+    public function comments()
+{
+    return $this->hasMany(Comment::class);
+}
 
     /* ---------- Atributos & helpers -------------------------------- */
 
@@ -69,4 +73,6 @@ class Activity extends Model
         $this->average_rating = $this->ratings()->avg('rating') ?? 0.00;
         $this->save();
     }
+    
+
 }
