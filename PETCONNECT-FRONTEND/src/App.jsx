@@ -1,4 +1,12 @@
 // src/App.jsx
+import AdminPanel from './pages/AdminPanel';
+import UserAdmin from './pages/admin/UserAdmin';
+import PetAdmin from './pages/admin/PetAdmin';
+import ActivityAdmin from './pages/admin/ActivityAdmin';
+import ReportAdmin from './pages/admin/ReportAdmin';
+import CommentAdmin from './pages/admin/CommentAdmin';
+import StatsAdmin from './pages/admin/StatsAdmin';
+
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   Routes,
@@ -23,11 +31,10 @@ export default function App() {
   const [toasts, setToasts] = useState([]);
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [user, setUser] = useState(null);
-  const [notifications, setNotifications] = useState([]); // ✅ Notificaciones
+  const [notifications, setNotifications] = useState([]);
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ✅ Cargar perfil y notificaciones
   useEffect(() => {
     if (token) {
       localStorage.setItem('token', token);
@@ -35,7 +42,7 @@ export default function App() {
         try {
           const { data } = await api.get('/api/profile');
           setUser(data);
-          fetchNotifications(); // ✅ Cargar notificaciones
+          fetchNotifications();
         } catch (e) {
           console.error(e);
         }
@@ -46,7 +53,6 @@ export default function App() {
     }
   }, [token]);
 
-  // ✅ Obtener notificaciones
   const fetchNotifications = async () => {
     try {
       const { data } = await api.get('/api/notifications');
@@ -56,7 +62,6 @@ export default function App() {
     }
   };
 
-  // ✅ Marcar notificación como leída
   const markAsRead = async (notificationId) => {
     try {
       await api.post(`/api/notifications/${notificationId}/mark-as-read`);
@@ -70,19 +75,16 @@ export default function App() {
     }
   };
 
-  // ✅ Mostrar toast
   const addToast = useCallback((message, type = 'info') => {
     const id = Date.now();
     const bg = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#17a2b8';
     setToasts((ts) => [...ts, { id, message, bg }]);
   }, []);
 
-  // ✅ Quitar toast
   const removeToast = useCallback((id) => {
     setToasts((ts) => ts.filter((t) => t.id !== id));
   }, []);
 
-  // ✅ Logout
   const handleLogout = async () => {
     try {
       await api.post('/api/logout');
@@ -92,7 +94,6 @@ export default function App() {
     navigate('/login', { replace: true });
   };
 
-  // ✅ Rutas protegidas
   const RequireAuth = ({ children }) =>
     token ? children : <Navigate to="/login" replace state={{ from: location }} />;
   const RequireGuest = ({ children }) =>
@@ -100,34 +101,23 @@ export default function App() {
 
   return (
     <>
-      {/* Navbar */}
       {token && user && (
         <nav className="navbar navbar-expand-lg navbar-light bg-light">
           <div className="container">
             <NavLink className="navbar-brand" to="/pets">PetConnect</NavLink>
             <div className="collapse navbar-collapse" id="navbarNav">
               <ul className="navbar-nav ms-auto align-items-center">
-                <li className="nav-item">
-                  <NavLink to="/pets" className="nav-link">Mis Mascotas</NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/activities" className="nav-link">Actividades</NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/lost-pets" className="nav-link">Mascotas Perdidas</NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink to="/lost-reports" className="nav-link">Reportes Perdidas</NavLink>
-                </li>
-
-                {/* ✅ Notificaciones */}
+                <li className="nav-item"><NavLink to="/pets" className="nav-link">Mis Mascotas</NavLink></li>
+                <li className="nav-item"><NavLink to="/activities" className="nav-link">Actividades</NavLink></li>
+                <li className="nav-item"><NavLink to="/lost-pets" className="nav-link">Mascotas Perdidas</NavLink></li>
+                <li className="nav-item"><NavLink to="/lost-reports" className="nav-link">Reportes Perdidas</NavLink></li>
+                {user?.role === 'admin' && (
+                  <li className="nav-item">
+                    <NavLink to="/admin" className="nav-link">Panel Admin</NavLink>
+                  </li>
+                )}
                 <li className="nav-item dropdown">
-                  <button
-                    className="btn btn-outline-secondary position-relative"
-                    type="button"
-                    data-bs-toggle="dropdown"
-                  >
-                    🔔
+                  <button className="btn btn-outline-secondary position-relative" type="button" data-bs-toggle="dropdown">🔔
                     {notifications.filter(n => !n.read_at).length > 0 && (
                       <span className="badge bg-danger position-absolute top-0 start-100 translate-middle">
                         {notifications.filter(n => !n.read_at).length}
@@ -142,27 +132,16 @@ export default function App() {
                         <li key={n.id} className="dropdown-item">
                           {n.message}
                           {!n.read_at && (
-                            <button
-                              className="btn btn-sm btn-link text-primary"
-                              onClick={() => markAsRead(n.id)}
-                            >
-                              Marcar como leída
-                            </button>
+                            <button className="btn btn-sm btn-link text-primary" onClick={() => markAsRead(n.id)}>Marcar como leída</button>
                           )}
                         </li>
                       ))
                     )}
                   </ul>
                 </li>
-
                 <li className="nav-item dropdown">
                   <NavLink to="#" className="nav-link dropdown-toggle" id="profileDropdown" data-bs-toggle="dropdown">
-                    <img
-                      src={user.avatar_url || '/default-avatar.png'}
-                      alt="avatar"
-                      className="rounded-circle"
-                      style={{ width: '40px', height: '40px', objectFit: 'cover' }}
-                    />
+                    <img src={user.avatar_url || '/default-avatar.png'} alt="avatar" className="rounded-circle" style={{ width: '40px', height: '40px', objectFit: 'cover' }} />
                   </NavLink>
                   <ul className="dropdown-menu dropdown-menu-end">
                     <li><NavLink className="dropdown-item" to="/profile">Mi Perfil</NavLink></li>
@@ -176,76 +155,35 @@ export default function App() {
         </nav>
       )}
 
-      {/* Contenedor de toasts */}
       <div className="toast-container" style={{ position: 'fixed', top: '1rem', right: '1rem', zIndex: 1080 }}>
-        {toasts.map((t) => (
-          <Toast key={t.id} {...t} onClose={removeToast} />
-        ))}
+        {toasts.map((t) => <Toast key={t.id} {...t} onClose={removeToast} />)}
       </div>
 
-      {/* Rutas */}
       <div className="container mt-4">
         <Routes>
-  <Route
-    path="/register"
-    element={
-      <RequireGuest>
-        <Register addToast={addToast} onLogin={setToken} />
-      </RequireGuest>
-    }
-  />
-  <Route
-    path="/login"
-    element={
-      <RequireGuest>
-        <Login addToast={addToast} onLogin={setToken} />
-      </RequireGuest>
-    }
-  />
-  <Route
-    path="/profile"
-    element={
-      <RequireAuth>
-        <Profile addToast={addToast} user={user} />
-      </RequireAuth>
-    }
-  />
-  <Route
-    path="/pets"
-    element={
-      <RequireAuth>
-        <Pets addToast={addToast} user={user} />
-      </RequireAuth>
-    }
-  />
-  <Route
-    path="/activities"
-    element={
-      <RequireAuth>
-        <Activities addToast={addToast} user={user} />
-      </RequireAuth>
-    }
-  />
-  <Route
-    path="/lost-pets"
-    element={
-      <RequireAuth>
-        <LostPets addToast={addToast} user={user} />
-      </RequireAuth>
-    }
-  />
-  <Route
-    path="/lost-reports"
-    element={
-      <RequireAuth>
-        <LostReports addToast={addToast} user={user} />
-      </RequireAuth>
-    }
-  />
-  {/* ✅ Ajuste aquí para que inicie en login */}
-  <Route path="/" element={<Navigate to="/login" replace />} />
-  <Route path="*" element={<Navigate to="/login" replace />} />
-</Routes>
+          <Route path="/admin" element={
+            <RequireAuth>
+              {user?.role === 'admin' ? <AdminPanel /> : <Navigate to="/pets" replace />}
+            </RequireAuth>
+          }>
+            <Route path="users" element={<UserAdmin />} />
+            <Route path="pets" element={<PetAdmin />} />
+            <Route path="activities" element={<ActivityAdmin />} />
+            <Route path="reports" element={<ReportAdmin />} />
+            <Route path="comments" element={<CommentAdmin />} />
+            <Route path="stats" element={<StatsAdmin />} />
+          </Route>
+
+          <Route path="/register" element={<RequireGuest><Register addToast={addToast} onLogin={setToken} /></RequireGuest>} />
+          <Route path="/login" element={<RequireGuest><Login addToast={addToast} onLogin={setToken} /></RequireGuest>} />
+          <Route path="/profile" element={<RequireAuth><Profile addToast={addToast} user={user} /></RequireAuth>} />
+          <Route path="/pets" element={<RequireAuth><Pets addToast={addToast} user={user} /></RequireAuth>} />
+          <Route path="/activities" element={<RequireAuth><Activities addToast={addToast} user={user} /></RequireAuth>} />
+          <Route path="/lost-pets" element={<RequireAuth><LostPets addToast={addToast} user={user} /></RequireAuth>} />
+          <Route path="/lost-reports" element={<RequireAuth><LostReports addToast={addToast} user={user} /></RequireAuth>} />
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
       </div>
     </>
   );

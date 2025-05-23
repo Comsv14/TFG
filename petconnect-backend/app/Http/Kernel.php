@@ -67,5 +67,6 @@ class Kernel extends HttpKernel
 
         // <-- Middleware de autenticación con Sanctum
         'auth:sanctum'     => \Laravel\Sanctum\Http\Middleware\Authenticate::class,
+        'admin' => \App\Http\Middleware\AdminMiddleware::class,
     ];
 }

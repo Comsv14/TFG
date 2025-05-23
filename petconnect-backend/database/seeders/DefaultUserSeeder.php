@@ -13,10 +13,10 @@ class DefaultUserSeeder extends Seeder
         User::updateOrCreate(
             ['email' => 'usuario@example.com'], // Condición para evitar duplicados
             [
-                'name' => 'usuario',
-                'email' => 'usuario@example.com',
-                'password' => Hash::make('contrasenia'),
-                'role' => 'user' // Puedes cambiar esto si tienes diferentes roles
+                'name' => 'admin',
+                'email' => 'admin@petconnect.com',
+                'password' => Hash::make('12345678'),
+                'role' => 'admin' // Puedes cambiar esto si tienes diferentes roles
             ]
         );
     }

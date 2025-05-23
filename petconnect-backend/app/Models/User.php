@@ -18,6 +18,7 @@ class User extends Authenticatable
         'avatar',
         'latitude',
         'longitude',
+        'role',
     ];
 
     protected $hidden = [
@@ -42,6 +43,10 @@ class User extends Authenticatable
     public function lostReports()
 {
     return $this->hasMany(LostReport::class);
+}
+public function isAdmin()
+{
+    return $this->role === 'admin';
 }
 
 }
