@@ -7,9 +7,10 @@ use Illuminate\Auth\Middleware\Authenticate as Middleware;
 class Authenticate extends Middleware
 {
     protected function redirectTo($request)
-    {
-        if (! $request->expectsJson()) {
-            abort(401, 'No autenticado.');
-        }
+{
+    if (!$request->expectsJson()) {
+        return null; // no redirige a ninguna ruta
     }
 }
+}
+

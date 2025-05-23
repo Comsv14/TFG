@@ -1,40 +1,43 @@
-// src/pages/admin/ReportAdmin.jsx
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import api from '../../api/axios';
 
 export default function ReportAdmin() {
   const [reports, setReports] = useState([]);
 
-  const fetchReports = async () => {
-    const res = await api.get('/api/admin/lost-reports');
-    setReports(res.data);
-  };
-
-  const deleteReport = async (id) => {
-    if (!window.confirm('¿Eliminar reporte?')) return;
-    await api.delete(`/api/admin/lost-reports/${id}`);
-    fetchReports();
-  };
-
   useEffect(() => {
-    fetchReports();
+    loadReports();
   }, []);
+
+  const loadReports = async () => {
+    try {
+      const { data } = await api.get('/api/admin/lost-reports');
+      setReports(data);
+    } catch (err) {
+      console.error('Error cargando reportes:', err);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm('¿Eliminar reporte?')) return;
+    try {
+      await api.delete(`/api/admin/lost-reports/${id}`);
+      setReports(reports.filter(r => r.id !== id));
+    } catch (err) {
+      console.error('Error al eliminar reporte:', err);
+    }
+  };
 
   return (
     <div>
-      <h3>Gestión de Reportes de Pérdida</h3>
-      <table className="table">
-        <thead><tr><th>Comentario</th><th>Fecha</th><th>Acciones</th></tr></thead>
-        <tbody>
-          {reports.map(r => (
-            <tr key={r.id}>
-              <td>{r.comment}</td>
-              <td>{new Date(r.happened_at).toLocaleString()}</td>
-              <td><button className="btn btn-sm btn-danger" onClick={() => deleteReport(r.id)}>Eliminar</button></td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <h2>Gestión de Reportes</h2>
+      <ul className="list-group">
+        {reports.map(r => (
+          <li key={r.id} className="list-group-item d-flex justify-content-between align-items-center">
+            {r.comment}
+            <button className="btn btn-sm btn-danger" onClick={() => handleDelete(r.id)}>Eliminar</button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

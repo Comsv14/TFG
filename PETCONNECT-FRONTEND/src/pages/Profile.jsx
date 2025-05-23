@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
 import MapPicker from '../components/MapPicker';
+import '../assets/css/profile.css';
 
 export default function Profile({ addToast }) {
   const [form, setForm] = useState({

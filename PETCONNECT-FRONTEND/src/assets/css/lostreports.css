@@ -1,0 +1,74 @@
+/* assets/css/lostreports.css */
+
+.lostreports-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #343a40;
+  background-color: #f9f9f9;
+}
+
+.lostreports-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.lostreports-header h2 {
+  font-size: 2rem;
+  color: #212529;
+}
+
+.lostreports-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 2rem;
+}
+
+.lostreport-card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  transition: transform 0.2s;
+}
+
+.lostreport-card:hover {
+  transform: translateY(-5px);
+}
+
+.lostreport-img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  background-color: #dee2e6;
+}
+
+.lostreport-body {
+  padding: 1rem;
+}
+
+.lostreport-body h5 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #343a40;
+}
+
+.lostreport-body p {
+  font-size: 0.95rem;
+  color: #6c757d;
+  margin: 0.5rem 0 0;
+}
+
+.lostreport-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem 1rem;
+}
+
+.lostreport-actions button {
+  font-size: 0.875rem;
+}

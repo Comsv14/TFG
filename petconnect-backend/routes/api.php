@@ -69,10 +69,10 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // Rutas de administración
-Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
+Route::middleware(['auth:sanctum'])->prefix('admin')->group(function () {
     Route::get('/users', [AdminController::class, 'users']);
     Route::delete('/users/{user}', [AdminController::class, 'deleteUser']);
-    
+
     Route::get('/pets', [AdminController::class, 'pets']);
     Route::delete('/pets/{pet}', [AdminController::class, 'deletePet']);
 

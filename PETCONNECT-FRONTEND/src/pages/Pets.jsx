@@ -4,6 +4,7 @@ import PetForm from '../components/PetForm';
 import PetCard from '../components/PetCard';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import '../assets/css/pets.css';
 
 export default function Pets({ addToast }) {
   const [pets, setPets] = useState([]);

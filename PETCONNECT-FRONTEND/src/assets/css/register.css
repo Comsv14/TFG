@@ -1,0 +1,54 @@
+/* assets/css/register.css */
+
+.page-auth {
+  max-width: 500px;
+  margin: 4rem auto;
+  background-color: #fff;
+  padding: 2rem 2.5rem;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
+}
+
+.page-auth h2 {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: #2c3e50;
+}
+
+.page-auth .form-control {
+  border-radius: 6px;
+  border: 1px solid #ced4da;
+  transition: border-color 0.2s ease-in-out;
+}
+
+.page-auth .form-control:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.page-auth button {
+  background-color: #007bff;
+  color: #fff;
+  font-weight: 500;
+  transition: background-color 0.3s ease;
+}
+
+.page-auth button:hover {
+  background-color: #0056b3;
+}
+
+.page-auth .text-center {
+  margin-top: 1.5rem;
+}
+
+.page-auth .btn-link {
+  font-weight: 500;
+  color: #007bff;
+  text-decoration: none;
+}
+
+.page-auth .btn-link:hover {
+  text-decoration: underline;
+}

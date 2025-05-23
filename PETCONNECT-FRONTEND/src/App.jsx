@@ -1,4 +1,3 @@
-// src/App.jsx
 import AdminPanel from './pages/AdminPanel';
 import UserAdmin from './pages/admin/UserAdmin';
 import PetAdmin from './pages/admin/PetAdmin';
@@ -6,6 +5,8 @@ import ActivityAdmin from './pages/admin/ActivityAdmin';
 import ReportAdmin from './pages/admin/ReportAdmin';
 import CommentAdmin from './pages/admin/CommentAdmin';
 import StatsAdmin from './pages/admin/StatsAdmin';
+import Footer from './components/Footer';
+import './assets/css/custom-style.css';
 
 import React, { useState, useCallback, useEffect } from 'react';
 import {
@@ -100,7 +101,7 @@ export default function App() {
     token ? <Navigate to="/pets" replace /> : children;
 
   return (
-    <>
+    <div id="root">
       {token && user && (
         <nav className="navbar navbar-expand-lg navbar-light bg-light">
           <div className="container">
@@ -112,9 +113,7 @@ export default function App() {
                 <li className="nav-item"><NavLink to="/lost-pets" className="nav-link">Mascotas Perdidas</NavLink></li>
                 <li className="nav-item"><NavLink to="/lost-reports" className="nav-link">Reportes Perdidas</NavLink></li>
                 {user?.role === 'admin' && (
-                  <li className="nav-item">
-                    <NavLink to="/admin" className="nav-link">Panel Admin</NavLink>
-                  </li>
+                  <li className="nav-item"><NavLink to="/admin" className="nav-link">Panel Admin</NavLink></li>
                 )}
                 <li className="nav-item dropdown">
                   <button className="btn btn-outline-secondary position-relative" type="button" data-bs-toggle="dropdown">🔔
@@ -140,7 +139,7 @@ export default function App() {
                   </ul>
                 </li>
                 <li className="nav-item dropdown">
-                  <NavLink to="#" className="nav-link dropdown-toggle" id="profileDropdown" data-bs-toggle="dropdown">
+                  <NavLink to="#" className="nav-link dropdown-toggle" data-bs-toggle="dropdown">
                     <img src={user.avatar_url || '/default-avatar.png'} alt="avatar" className="rounded-circle" style={{ width: '40px', height: '40px', objectFit: 'cover' }} />
                   </NavLink>
                   <ul className="dropdown-menu dropdown-menu-end">
@@ -155,17 +154,13 @@ export default function App() {
         </nav>
       )}
 
-      <div className="toast-container" style={{ position: 'fixed', top: '1rem', right: '1rem', zIndex: 1080 }}>
+      <div className="toast-container">
         {toasts.map((t) => <Toast key={t.id} {...t} onClose={removeToast} />)}
       </div>
 
-      <div className="container mt-4">
+      <main className="main-content container mt-4">
         <Routes>
-          <Route path="/admin" element={
-            <RequireAuth>
-              {user?.role === 'admin' ? <AdminPanel /> : <Navigate to="/pets" replace />}
-            </RequireAuth>
-          }>
+          <Route path="/admin" element={<RequireAuth>{user?.role === 'admin' ? <AdminPanel /> : <Navigate to="/pets" replace />}</RequireAuth>}>
             <Route path="users" element={<UserAdmin />} />
             <Route path="pets" element={<PetAdmin />} />
             <Route path="activities" element={<ActivityAdmin />} />
@@ -184,7 +179,9 @@ export default function App() {
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
-      </div>
-    </>
+      </main>
+
+      <Footer />
+    </div>
   );
 }

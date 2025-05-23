@@ -1,6 +1,8 @@
 // src/pages/AdminPanel.jsx
 import React from 'react';
 import { Link, Outlet } from 'react-router-dom';
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 
 export default function AdminPanel() {
   return (
@@ -29,6 +31,7 @@ export default function AdminPanel() {
 
       {/* Aquí se renderiza la ruta hija */}
       <Outlet />
+      
     </div>
   );
 }

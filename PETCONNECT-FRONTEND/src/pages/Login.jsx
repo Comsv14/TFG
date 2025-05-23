@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/axios';
+import '../assets/css/login.css';
 
 export default function Login({ addToast, onLogin }) {
   const [form, setForm] = useState({ email: '', password: '' });
@@ -12,35 +13,32 @@ export default function Login({ addToast, onLogin }) {
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
-  try {
-    const { data } = await api.post('/api/login', form);
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await api.get('/sanctum/csrf-cookie'); // 👈 NECESARIO PARA SANCTUM
+      const { data } = await api.post('/api/login', form);
 
-    // Guardamos el token y el usuario
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
-    onLogin(data.token);
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      onLogin(data.token);
+      addToast('Inicio de sesión exitoso', 'success');
 
-    addToast('Inicio de sesión exitoso', 'success');
-
-    // Redirigimos según el rol
-    if (data.user.role === 'admin') {
-      navigate('/admin', { replace: true });
-    } else {
-      navigate('/pets', { replace: true });
+      if (data.user.role === 'admin') {
+        navigate('/admin', { replace: true });
+      } else {
+        navigate('/pets', { replace: true });
+      }
+    } catch (err) {
+      if (err.response?.status === 401) {
+        addToast('Correo o contraseña incorrectos', 'error');
+      } else {
+        addToast('Error al iniciar sesión', 'error');
+      }
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    if (err.response?.status === 401) {
-      addToast('Correo o contraseña incorrectos', 'error');
-    } else {
-      addToast('Error al iniciar sesión', 'error');
-    }
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   /* ---------- render ---------- */
   return (

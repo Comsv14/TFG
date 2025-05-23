@@ -1,0 +1,49 @@
+/* resources/css/login.css */
+.page-auth {
+  max-width: 400px;
+  margin: 3rem auto;
+  padding: 2rem;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.page-auth h2 {
+  text-align: center;
+  margin-bottom: 2rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.page-auth .form-control {
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  transition: border 0.3s ease;
+}
+
+.page-auth .form-control:focus {
+  border-color: #3498db;
+  box-shadow: 0 0 5px rgba(52, 152, 219, 0.4);
+}
+
+.page-auth .btn-primary {
+  background-color: #3498db;
+  border: none;
+  padding: 0.75rem;
+  border-radius: 6px;
+  transition: background-color 0.3s ease;
+}
+
+.page-auth .btn-primary:hover {
+  background-color: #2980b9;
+}
+
+.page-auth .btn-link {
+  color: #3498db;
+  text-decoration: none;
+}
+
+.page-auth .btn-link:hover {
+  text-decoration: underline;
+}

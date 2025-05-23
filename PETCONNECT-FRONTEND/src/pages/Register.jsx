@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
+import '../assets/css/register.css';
 
 export default function Register({ addToast, onLogin }) {
   const [form, setForm] = useState({

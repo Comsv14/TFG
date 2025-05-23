@@ -3,6 +3,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import api from '../api/axios';
 import ActivityCard from '../components/ActivityCard';
 import ActivityForm from '../components/ActivityForm';
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 
 export default function Activities({ addToast }) {
   const [activities, setActivities] = useState([]);
@@ -158,6 +160,7 @@ export default function Activities({ addToast }) {
           <p className="text-center text-muted">No hay actividades.</p>
         )}
       </div>
+      
     </div>
   );
 }

@@ -1,0 +1,67 @@
+/* Contenedor general */
+.container {
+  padding: 2rem 1rem;
+}
+
+/* Título de sección */
+h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  text-align: center;
+  color: #343a40;
+  margin-bottom: 2rem;
+  position: relative;
+}
+
+h2::after {
+  content: '';
+  width: 60px;
+  height: 4px;
+  background-color: #007bff;
+  display: block;
+  margin: 0.5rem auto 0;
+  border-radius: 2px;
+}
+
+/* Tarjetas de mascota */
+.card {
+  border: none;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+}
+
+.card-img-top {
+  height: 250px;
+  object-fit: cover;
+}
+
+.card-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.card-text {
+  font-size: 0.95rem;
+  color: #555;
+}
+
+/* Botón "Ver más" */
+.card .btn-primary {
+  background: linear-gradient(to right, #007bff, #0056b3);
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 30px;
+  font-weight: 600;
+  transition: background 0.3s ease;
+}
+
+.card .btn-primary:hover {
+  background: linear-gradient(to right, #0056b3, #003d82);
+}

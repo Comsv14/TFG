@@ -9,8 +9,8 @@ class DatabaseSeeder extends Seeder
     public function run()
     {
         $this->call([
-            DefaultUserSeeder::class,
             PetActivitiesTableSeeder::class,
+            AdminUserSeeder::class,
         ]);
     }
 }

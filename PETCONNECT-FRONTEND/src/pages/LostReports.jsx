@@ -2,8 +2,10 @@
 import React, { useState, useEffect, useCallback, Fragment } from 'react';
 import api from '../api/axios';
 import MapPicker from '../components/MapPicker';
+import '../assets/css/lostreports.css';
 
 export default function LostReports({ addToast, user }) {
+  // eslint-disable-next-line no-unused-vars
   const [reports, setReports] = useState([]);
   const [myPets, setMyPets] = useState([]); // Tus mascotas
   const [form, setForm] = useState({

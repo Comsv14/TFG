@@ -1,0 +1,79 @@
+/* assets/css/lostpets.css */
+
+.lostpets-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
+}
+
+.lostpets-title {
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  color: #2c3e50;
+}
+
+.lostpets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.lostpet-card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease;
+}
+
+.lostpet-card:hover {
+  transform: translateY(-5px);
+}
+
+.lostpet-card img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+}
+
+.lostpet-card-body {
+  padding: 1rem;
+}
+
+.lostpet-card-title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #34495e;
+}
+
+.lostpet-card-location {
+  font-size: 0.95rem;
+  color: #888;
+}
+
+.lostpet-card-footer {
+  margin-top: auto;
+  padding: 0.75rem 1rem;
+  background: #f5f5f5;
+  text-align: right;
+}
+
+.lostpet-card-footer button {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+  border: none;
+  border-radius: 4px;
+  background: #007bff;
+  color: #fff;
+  cursor: pointer;
+}
+
+.lostpet-card-footer button:hover {
+  background: #0056b3;
+}

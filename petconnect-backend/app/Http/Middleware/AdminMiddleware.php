@@ -9,10 +9,10 @@ class AdminMiddleware
 {
     public function handle(Request $request, Closure $next)
     {
-        if ($request->user() && $request->user()->role === 'admin') {
-            return $next($request);
+        if (!auth()->check() || auth()->user()->role !== 'admin') {
+            return response()->json(['error' => 'No autorizado.'], 403);
         }
 
-        return response()->json(['error' => 'No autorizado.'], 403);
+        return $next($request);
     }
 }
