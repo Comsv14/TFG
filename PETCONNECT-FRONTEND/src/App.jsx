@@ -111,7 +111,15 @@ export default function App() {
       {token && user && (
         <nav className="navbar navbar-expand-lg navbar-light bg-light">
           <div className="container">
-            <NavLink className="navbar-brand" to="/pets">PetConnect</NavLink>
+            <NavLink className="navbar-brand d-flex align-items-center" to="/pets">
+            <img
+              src="/favicon.png"
+              alt="PetConnect"
+              style={{ height: '32px', width: 'auto', marginRight: '8px' }}
+              />
+              <span className="fw-bold text-dark">PetConnect</span>
+              </NavLink>
+
             <div className="collapse navbar-collapse" id="navbarNav">
               <ul className="navbar-nav ms-auto align-items-center">
                 <li className="nav-item"><NavLink to="/pets" className="nav-link">Mis Mascotas</NavLink></li>

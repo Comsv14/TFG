@@ -176,3 +176,7 @@ footer .social-icons i {
 footer .social-icons i:hover {
   color: var(--color-primary);
 }
+.navbar-brand img {
+  max-height: 40px;
+  object-fit: contain;
+}
