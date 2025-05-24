@@ -1,3 +1,4 @@
+// src/App.jsx
 import AdminPanel from './pages/AdminPanel';
 import UserAdmin from './pages/admin/UserAdmin';
 import PetAdmin from './pages/admin/PetAdmin';
@@ -65,10 +66,12 @@ export default function App() {
 
   const markAsRead = async (notificationId) => {
     try {
-      await api.post(`/api/notifications/${notificationId}/mark-as-read`);
+      await api.post(`/api/notifications/mark-as-read`, {
+        notification_id: notificationId,
+      });
       setNotifications((prev) =>
         prev.map((n) =>
-          n.id === notificationId ? { ...n, read_at: new Date() } : n
+          n.id === notificationId ? { ...n, read: true } : n
         )
       );
     } catch (e) {
@@ -100,6 +103,9 @@ export default function App() {
   const RequireGuest = ({ children }) =>
     token ? <Navigate to="/pets" replace /> : children;
 
+  const unread = notifications.filter(n => !n.read);
+  const read = notifications.filter(n => n.read);
+
   return (
     <div id="root">
       {token && user && (
@@ -117,23 +123,31 @@ export default function App() {
                 )}
                 <li className="nav-item dropdown">
                   <button className="btn btn-outline-secondary position-relative" type="button" data-bs-toggle="dropdown">🔔
-                    {notifications.filter(n => !n.read_at).length > 0 && (
+                    {unread.length > 0 && (
                       <span className="badge bg-danger position-absolute top-0 start-100 translate-middle">
-                        {notifications.filter(n => !n.read_at).length}
+                        {unread.length}
                       </span>
                     )}
                   </button>
-                  <ul className="dropdown-menu dropdown-menu-end">
-                    {notifications.length === 0 ? (
-                      <li className="dropdown-item text-muted">Sin notificaciones</li>
+                  <ul className="dropdown-menu dropdown-menu-end" style={{ minWidth: '300px' }}>
+                    <li className="dropdown-header fw-bold text-primary">Nuevas</li>
+                    {unread.length === 0 ? (
+                      <li className="dropdown-item text-muted">Sin notificaciones nuevas</li>
                     ) : (
-                      notifications.map(n => (
-                        <li key={n.id} className="dropdown-item">
-                          {n.message}
-                          {!n.read_at && (
-                            <button className="btn btn-sm btn-link text-primary" onClick={() => markAsRead(n.id)}>Marcar como leída</button>
-                          )}
+                      unread.map(n => (
+                        <li key={n.id} className="dropdown-item d-flex justify-content-between align-items-start">
+                          <span>{n.message}</span>
+                          <button className="btn btn-sm btn-link p-0 ms-2" onClick={() => markAsRead(n.id)}>✓</button>
                         </li>
+                      ))
+                    )}
+                    <li><hr className="dropdown-divider" /></li>
+                    <li className="dropdown-header text-secondary">Leídas</li>
+                    {read.length === 0 ? (
+                      <li className="dropdown-item text-muted">Sin notificaciones leídas</li>
+                    ) : (
+                      read.map(n => (
+                        <li key={n.id} className="dropdown-item text-muted">{n.message}</li>
                       ))
                     )}
                   </ul>

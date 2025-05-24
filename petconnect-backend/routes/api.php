@@ -33,6 +33,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('activity-ratings/{activity_id}/average', [ActivityRatingController::class, 'average']);
     Route::get('notifications', [NotificationController::class, 'index']);
     Route::post('notifications/mark-as-read', [NotificationController::class, 'markAsRead']);
+    
+
 
     // Actividades
     Route::apiResource('activities', ActivityController::class);

@@ -18,24 +18,36 @@ class LostPetCommentController extends Controller
     }
 
     public function store(Request $request, $lostPetId)
-    {
-        $request->validate([
-            'body' => 'required|string|max:1000',
-        ]);
+{
+    $request->validate([
+        'body' => 'required|string|max:1000',
+    ]);
 
-        // Verifica que el lost_pet exista antes de guardar el comentario
-        $lostPet = LostPet::find($lostPetId);
+    $lostPet = LostPet::with('user')->find($lostPetId);
 
-        if (!$lostPet) {
-            return response()->json(['error' => 'Mascota perdida no encontrada.'], 404);
-        }
-
-        $comment = LostPetComment::create([
-            'user_id' => auth()->id(),
-            'lost_pet_id' => $lostPetId,
-            'body' => $request->body,
-        ]);
-
-        return $comment->load('user');
+    if (!$lostPet) {
+        return response()->json(['error' => 'Mascota perdida no encontrada.'], 404);
     }
+
+    $comment = LostPetComment::create([
+        'user_id' => auth()->id(),
+        'lost_pet_id' => $lostPetId,
+        'body' => $request->body,
+    ]);
+
+    $comment->load('user');
+
+    // Notificar al creador del reporte si no es el mismo usuario
+    if ($lostPet->user_id !== auth()->id()) {
+        \App\Models\Notification::create([
+            'user_id' => $lostPet->user_id,
+            'title' => 'Nuevo comentario en tu publicación',
+            'message' => auth()->user()->name . ' ha comentado en tu reporte de mascota perdida.',
+            'read' => false,
+        ]);
+    }
+
+    return $comment;
+}
+
 }
